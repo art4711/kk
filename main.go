@@ -104,11 +104,61 @@ func (f *field) right() {
 }
 
 func (f *field) up() {
-
+	n := [4][4]int{}
+	for x := 0; x < 4; x++ {
+		last := 0
+		r := 0
+		for y := 0; y < 4; y++ {
+			v := f.v[y][x]
+			if v == 0 {
+				continue
+			}
+			if last == v {
+				n[r][x] = last + 1
+				r++
+				last = 0
+			} else {
+				if last != 0 {
+					n[r][x] = last
+					r++
+				}
+				last = v
+			}
+		}
+		if last != 0 {
+			n[r][x] = last
+		}
+	}
+	f.set(n)
 }
 
 func (f *field) down() {
-
+	n := [4][4]int{}
+	for x := 0; x < 4; x++ {
+		last := 0
+		r := 3
+		for y := 3; y >= 0; y-- {
+			v := f.v[y][x]
+			if v == 0 {
+				continue
+			}
+			if last == v {
+				n[r][x] = last + 1
+				r--
+				last = 0
+			} else {
+				if last != 0 {
+					n[r][x] = last
+					r--
+				}
+				last = v
+			}
+		}
+		if last != 0 {
+			n[r][x] = last
+		}
+	}
+	f.set(n)
 }
 
 func newField() *field {
