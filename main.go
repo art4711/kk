@@ -22,36 +22,37 @@ import (
 	"github.com/golang/freetype/truetype"
 )
 
-type field struct {
-	v [4][4]int
-}
+const width = 4
+const height = 4
+
+type field [height][width]int
 
 func (f *field) r() {
 	for {
-		i := rand.Intn(16)
-		c, r := i/4, i%4
-		if f.v[c][r] == 0 {
-			f.v[c][r] = 1
+		i := rand.Intn(height * width)
+		c, r := i/width, i%width
+		if f[c][r] == 0 {
+			f[c][r] = 1
 			break
 		}
 	}
 }
 
-func (f *field) set(n [4][4]int) {
-	add := n != f.v
-	f.v = n
+func (f *field) set(n field) {
+	add := n != *f
+	*f = n
 	if add {
 		f.r()
 	}
 }
 
 func (f *field) left() {
-	n := [4][4]int{}
-	for y := 0; y < 4; y++ {
+	n := field{}
+	for y := 0; y < height; y++ {
 		last := 0
 		c := 0
-		for x := 0; x < 4; x++ {
-			v := f.v[y][x]
+		for x := 0; x < width; x++ {
+			v := (*f)[y][x]
 			if v == 0 {
 				continue
 			}
@@ -75,12 +76,12 @@ func (f *field) left() {
 }
 
 func (f *field) right() {
-	n := [4][4]int{}
-	for y := 0; y < 4; y++ {
+	n := field{}
+	for y := 0; y < height; y++ {
 		last := 0
-		c := 3
-		for x := 3; x >= 0; x-- {
-			v := f.v[y][x]
+		c := width - 1
+		for x := width - 1; x >= 0; x-- {
+			v := (*f)[y][x]
 			if v == 0 {
 				continue
 			}
@@ -104,12 +105,12 @@ func (f *field) right() {
 }
 
 func (f *field) up() {
-	n := [4][4]int{}
-	for x := 0; x < 4; x++ {
+	n := field{}
+	for x := 0; x < width; x++ {
 		last := 0
 		r := 0
-		for y := 0; y < 4; y++ {
-			v := f.v[y][x]
+		for y := 0; y < height; y++ {
+			v := (*f)[y][x]
 			if v == 0 {
 				continue
 			}
@@ -133,12 +134,12 @@ func (f *field) up() {
 }
 
 func (f *field) down() {
-	n := [4][4]int{}
-	for x := 0; x < 4; x++ {
+	n := field{}
+	for x := 0; x < width; x++ {
 		last := 0
-		r := 3
-		for y := 3; y >= 0; y-- {
-			v := f.v[y][x]
+		r := height - 1
+		for y := height - 1; y >= 0; y-- {
+			v := (*f)[y][x]
 			if v == 0 {
 				continue
 			}
@@ -210,13 +211,13 @@ func main() {
 
 			case paint.Event:
 				var wg sync.WaitGroup
-				tsz := image.Point{wsz.WidthPx / 4, wsz.HeightPx / 4}
-				for y := 0; y < 4; y++ {
-					for x := 0; x < 4; x++ {
+				tsz := image.Point{wsz.WidthPx / width, wsz.HeightPx / height}
+				for y := 0; y < height; y++ {
+					for x := 0; x < width; x++ {
 						wg.Add(1)
 						go func(x, y int) {
 							defer wg.Done()
-							t := tiles.get(f.v[y][x], s, tsz)
+							t := tiles.get(f[y][x], s, tsz)
 							w.Copy(image.Point{tsz.X * x, tsz.Y * y}, t, image.Rectangle{Max: tsz}, screen.Src, nil)
 						}(x, y)
 					}
