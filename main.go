@@ -291,7 +291,10 @@ func (t *tiles) genTex(n int, s screen.Screen) (screen.Texture, error) {
 		ic = image.NewUniform(color.RGBA{80, 80, 80, 255})
 	}
 	im := buf.RGBA()
-	draw.Draw(im, im.Bounds(), ic, image.Point{}, draw.Src)
+	ul := t.sz.Div(20)
+	lr := t.sz.Sub(ul)
+	draw.Draw(im, im.Bounds(), image.NewUniform(color.RGBA{133, 95, 15, 255}), image.Point{}, draw.Src)
+	draw.Draw(im, image.Rectangle{ul, lr}, ic, image.Point{}, draw.Src)
 
 	if n > 0 {
 		fc := image.Black
