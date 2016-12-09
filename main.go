@@ -298,8 +298,6 @@ func (t *tiles) genTex(n int, s screen.Screen) (screen.Texture, error) {
 
 	if n > 0 {
 		fc := image.Black
-		// These are completely made up numbers that seem to work, I
-		// don't actually know why.
 		dot := fixed.P(t.sz.X/3, t.sz.Y/2)
 		dot.Y += t.face.Metrics().Ascent / 2
 		d := font.Drawer{
