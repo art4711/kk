@@ -262,7 +262,7 @@ func (t *tiles) get(n int, s screen.Screen, sz image.Point) screen.Texture {
 		}
 		// notice that the use of face is protected by the mutex
 		t.face = truetype.NewFace(f, &truetype.Options{
-			Size: float64(sz.X / 2),
+			Size: float64((sz.X + sz.Y) / 4),
 		})
 	}
 	v := t.m[n]
@@ -297,8 +297,8 @@ func (t *tiles) genTex(n int, s screen.Screen) (screen.Texture, error) {
 		fc := image.Black
 		// These are completely made up numbers that seem to work, I
 		// don't actually know why.
-		dot := fixed.P(t.sz.X/3, t.sz.Y/8)
-		dot.Y += t.face.Metrics().Ascent
+		dot := fixed.P(t.sz.X/3, t.sz.Y/2)
+		dot.Y += t.face.Metrics().Ascent / 2
 		d := font.Drawer{
 			Dst:  im,
 			Src:  fc,
