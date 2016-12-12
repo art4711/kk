@@ -9,15 +9,18 @@ import (
 	"math/rand"
 	"sync"
 
-	"golang.org/x/exp/shiny/driver"
-	"golang.org/x/exp/shiny/screen"
 	"golang.org/x/image/font"
 	"golang.org/x/image/font/gofont/gobold"
 	"golang.org/x/image/math/fixed"
+
+	"golang.org/x/mobile/app"
 	"golang.org/x/mobile/event/key"
 	"golang.org/x/mobile/event/lifecycle"
 	"golang.org/x/mobile/event/paint"
 	"golang.org/x/mobile/event/size"
+	"golang.org/x/mobile/exp/gl/glutil"
+	"golang.org/x/mobile/geom"
+	"golang.org/x/mobile/gl"
 
 	"github.com/golang/freetype/truetype"
 )
@@ -170,22 +173,26 @@ func newField() *field {
 }
 
 func main() {
-	driver.Main(func(s screen.Screen) {
-		w, err := s.NewWindow(nil)
-		if err != nil {
-			log.Fatal(err)
-		}
-		defer w.Release()
+	app.Main(func(a app.App) {
+		var glctx gl.Context
 
 		repaint := false
 		wsz := size.Event{}
 		f := newField()
 		tiles := tiles{}
 
-		for {
-			switch e := w.NextEvent().(type) {
+		var ims *glutil.Images
+
+		for e := range a.Events() {
+			switch e := a.Filter(e).(type) {
 			case lifecycle.Event:
-				if e.To == lifecycle.StageDead {
+				switch e.Crosses(lifecycle.StageVisible) {
+				case lifecycle.CrossOn:
+					glctx, _ = e.DrawContext.(gl.Context)
+					ims = glutil.NewImages(glctx)
+					a.Send(paint.Event{})
+				case lifecycle.CrossOff:
+					glctx = nil
 					return
 				}
 
@@ -205,25 +212,23 @@ func main() {
 					}
 					if !repaint {
 						repaint = true
-						w.Send(paint.Event{})
+						a.Send(paint.Event{})
 					}
 				}
 
 			case paint.Event:
-				var wg sync.WaitGroup
 				tsz := image.Point{wsz.WidthPx / width, wsz.HeightPx / height}
+				tpsz := geom.Point{wsz.WidthPt / geom.Pt(width), wsz.HeightPt / geom.Pt(height)}
 				for y := 0; y < height; y++ {
 					for x := 0; x < width; x++ {
-						wg.Add(1)
-						go func(x, y int) {
-							defer wg.Done()
-							t := tiles.get(f[y][x], s, tsz)
-							w.Copy(image.Point{tsz.X * x, tsz.Y * y}, t, image.Rectangle{Max: tsz}, screen.Src, nil)
-						}(x, y)
+						t := tiles.get(f[y][x], ims, tsz)
+						tl := geom.Point{tpsz.X * geom.Pt(x), tpsz.Y * geom.Pt(y)}
+						tr := geom.Point{tpsz.X * geom.Pt(x+1), tpsz.Y * geom.Pt(y)}
+						bl := geom.Point{tpsz.X * geom.Pt(x), tpsz.Y * geom.Pt(y+1)}
+						t.Draw(wsz, tl, tr, bl, image.Rectangle{Max: tsz})
 					}
 				}
-				wg.Wait()
-				w.Publish()
+				a.Publish()
 				repaint = false
 			case size.Event:
 				wsz = e
@@ -236,7 +241,7 @@ func main() {
 }
 
 type tiles struct {
-	m   map[int]screen.Texture
+	m   map[int]*glutil.Image
 	mtx sync.Mutex
 	sz  image.Point
 
@@ -247,10 +252,10 @@ func (t *tiles) drop() {
 	for _, t := range t.m {
 		t.Release()
 	}
-	t.m = make(map[int]screen.Texture)
+	t.m = make(map[int]*glutil.Image)
 }
 
-func (t *tiles) get(n int, s screen.Screen, sz image.Point) screen.Texture {
+func (t *tiles) get(n int, ims *glutil.Images, sz image.Point) *glutil.Image {
 	t.mtx.Lock()
 	defer t.mtx.Unlock()
 	if t.sz != sz {
@@ -266,31 +271,21 @@ func (t *tiles) get(n int, s screen.Screen, sz image.Point) screen.Texture {
 		})
 	}
 	v := t.m[n]
-	if v != nil {
-		return v
+	if v == nil {
+		v = t.genTex(n, ims)
+		t.m[n] = v
 	}
-	v, err := t.genTex(n, s)
-	if err != nil {
-		log.Fatal(err)
-	}
-	t.m[n] = v
 	return v
 }
 
-func (t *tiles) genTex(n int, s screen.Screen) (screen.Texture, error) {
-	tex, err := s.NewTexture(t.sz)
-	if err != nil {
-		return nil, err
-	}
-	buf, err := s.NewBuffer(t.sz)
-	if err != nil {
-		return nil, err
-	}
+func (t *tiles) genTex(n int, ims *glutil.Images) *glutil.Image {
+	img := ims.NewImage(t.sz.X, t.sz.Y)
+
 	ic := image.NewUniform(color.RGBA{20, 20 * uint8(n), 120, 255})
 	if n == 0 {
 		ic = image.NewUniform(color.RGBA{80, 80, 80, 255})
 	}
-	im := buf.RGBA()
+	im := img.RGBA
 	ul := t.sz.Div(20)
 	lr := t.sz.Sub(ul)
 	draw.Draw(im, im.Bounds(), image.NewUniform(color.RGBA{133, 95, 15, 255}), image.Point{}, draw.Src)
@@ -308,8 +303,6 @@ func (t *tiles) genTex(n int, s screen.Screen) (screen.Texture, error) {
 		}
 		d.DrawString(fmt.Sprint(n))
 	}
-
-	tex.Upload(image.Point{}, buf, image.Rectangle{Max: t.sz})
-	buf.Release()
-	return tex, nil
+	img.Upload()
+	return img
 }
