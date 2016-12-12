@@ -197,10 +197,11 @@ func main() {
 				}
 
 			case key.Event:
+				if e.Code == key.CodeEscape {
+					return
+				}
 				if e.Direction == key.DirPress {
 					switch e.Code {
-					case key.CodeEscape:
-						return
 					case key.CodeLeftArrow:
 						f.left()
 					case key.CodeRightArrow:
@@ -217,7 +218,11 @@ func main() {
 				}
 
 			case paint.Event:
+				glctx.ClearColor(0, 0, 0, 1)
+				glctx.Clear(gl.COLOR_BUFFER_BIT)
+				// We actually want to create the tiles with correct pixel sizes so that the font looks good ...
 				tsz := image.Point{wsz.WidthPx / width, wsz.HeightPx / height}
+				// ..., but we need to render them in geom space.
 				tpsz := geom.Point{wsz.WidthPt / geom.Pt(width), wsz.HeightPt / geom.Pt(height)}
 				for y := 0; y < height; y++ {
 					for x := 0; x < width; x++ {
