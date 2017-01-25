@@ -10,10 +10,6 @@ import (
 )
 
 func main() {
-	smain()
-}
-
-func smain() {
 	gldriver.Main(func(s screen.Screen) {
 		st := kk.New()
 		w, err := s.NewWindow(&screen.NewWindowOptions{800, 800})
@@ -35,24 +31,3 @@ func smain() {
 		}
 	})
 }
-
-/*
-func mmain() {
-	app.Main(func(a app.App) {
-		s := st()
-
-		for e := range a.Events() {
-			repaint, quit, publish := s.handle(a.Filter(e))
-			if quit {
-				return
-			}
-			if repaint {
-				a.Send(paint.Event{})
-			}
-			if publish {
-				a.Publish()
-			}
-		}
-	})
-}
-*/
