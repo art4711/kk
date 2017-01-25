@@ -75,12 +75,15 @@ func (s *State) Handle(ei interface{}) (repaint bool, quit bool, publish bool) {
 func (s *State) Draw() {
 	s.glctx.ClearColor(0, 0, 0, 1)
 	s.glctx.Clear(gl.COLOR_BUFFER_BIT)
+
+	w, h := s.f.W(), s.f.H()
+
 	// We actually want to create the tiles with correct pixel sizes so the font looks good ...
-	tsz := image.Point{s.wsz.WidthPx / s.f.W(), s.wsz.HeightPx / s.f.H()}
+	tsz := image.Point{s.wsz.WidthPx / w, s.wsz.HeightPx / h}
 	// ..., but we need to render them in geom space.
-	tpsz := geom.Point{s.wsz.WidthPt / geom.Pt(s.f.W()), s.wsz.HeightPt / geom.Pt(s.f.H())}
-	for y := 0; y < s.f.H(); y++ {
-		for x := 0; x < s.f.W(); x++ {
+	tpsz := geom.Point{s.wsz.WidthPt / geom.Pt(w), s.wsz.HeightPt / geom.Pt(h)}
+	for y := 0; y < h; y++ {
+		for x := 0; x < w; x++ {
 			t := s.tiles.Get(s.f[y][x], tsz)
 			tl := geom.Point{tpsz.X * geom.Pt(x), tpsz.Y * geom.Pt(y)}
 			tr := geom.Point{tpsz.X * geom.Pt(x+1), tpsz.Y * geom.Pt(y)}
