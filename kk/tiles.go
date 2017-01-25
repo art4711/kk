@@ -71,7 +71,7 @@ func (t *Tiles) genTex(n int) *glutil.Image {
 	draw.Draw(im, image.Rectangle{ul, lr}, ic, image.Point{}, draw.Src)
 
 	if n > 0 {
-		s := fmt.Sprintf("2^%d", n)
+		s := fmt.Sprintf("%d", 1<<uint(n))
 
 		dot := fixed.P(t.sz.X/2, t.sz.Y/2)
 		dot.Y += t.face.Metrics().Ascent / 2
