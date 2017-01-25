@@ -3,11 +3,13 @@ package kk
 import (
 	"image"
 	"log"
+	"math"
 
 	"golang.org/x/mobile/event/key"
 	"golang.org/x/mobile/event/lifecycle"
 	"golang.org/x/mobile/event/paint"
 	"golang.org/x/mobile/event/size"
+	"golang.org/x/mobile/event/touch"
 	"golang.org/x/mobile/geom"
 	"golang.org/x/mobile/gl"
 )
@@ -17,6 +19,8 @@ type State struct {
 	f     *Field
 	wsz   size.Event
 	glctx gl.Context
+
+	touchStart touch.Event
 }
 
 func New() *State {
@@ -66,6 +70,27 @@ func (s *State) Handle(ei interface{}) (repaint bool, quit bool, publish bool) {
 	case size.Event:
 		s.wsz = e
 
+	case touch.Event:
+		switch e.Type {
+		case touch.TypeBegin:
+			s.touchStart = e
+		case touch.TypeEnd:
+			x, y := e.X-s.touchStart.X, e.Y-s.touchStart.Y
+			if math.Abs(float64(x)) > math.Abs(float64(y)) {
+				if x < 0 {
+					s.f.Left()
+				} else {
+					s.f.Right()
+				}
+			} else {
+				if y < 0 {
+					s.f.Up()
+				} else {
+					s.f.Down()
+				}
+			}
+			repaint = true
+		}
 	case error:
 		log.Print(e)
 	}
