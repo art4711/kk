@@ -48,15 +48,13 @@ func (t *Tiles) Get(n int, sz image.Point) *glutil.Image {
 		}
 		// notice that the use of face is protected by the mutex
 		t.face = truetype.NewFace(f, &truetype.Options{
-			Size: float64((sz.X + sz.Y) / 4),
+			Size: float64((sz.X + sz.Y) / 8),
 		})
 	}
-	v := t.m[n]
-	if v == nil {
-		v = t.genTex(n)
-		t.m[n] = v
+	if t.m[n] == nil {
+		t.m[n] = t.genTex(n)
 	}
-	return v
+	return t.m[n]
 }
 
 func (t *Tiles) genTex(n int) *glutil.Image {
@@ -73,16 +71,18 @@ func (t *Tiles) genTex(n int) *glutil.Image {
 	draw.Draw(im, image.Rectangle{ul, lr}, ic, image.Point{}, draw.Src)
 
 	if n > 0 {
-		fc := image.Black
-		dot := fixed.P(t.sz.X/3, t.sz.Y/2)
+		s := fmt.Sprintf("2^%d", n)
+
+		dot := fixed.P(t.sz.X/2, t.sz.Y/2)
 		dot.Y += t.face.Metrics().Ascent / 2
+		dot.X -= font.MeasureString(t.face, s) / 2
 		d := font.Drawer{
 			Dst:  im,
-			Src:  fc,
+			Src:  image.Black,
 			Face: t.face,
 			Dot:  dot,
 		}
-		d.DrawString(fmt.Sprint(n))
+		d.DrawString(s)
 	}
 	img.Upload()
 	return img
