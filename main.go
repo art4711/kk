@@ -81,7 +81,7 @@ func main() {
 func smain() {
 	gldriver.Main(func(s screen.Screen) {
 		st := st()
-		w, err := s.NewWindow(&screen.NewWindowOptions{400, 400})
+		w, err := s.NewWindow(&screen.NewWindowOptions{800, 800})
 		if err != nil {
 			log.Fatal(err)
 		}
