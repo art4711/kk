@@ -29,6 +29,11 @@ func NewTiles(glctx gl.Context) *Tiles {
 	return &Tiles{ims: glutil.NewImages(glctx)}
 }
 
+func (t *Tiles) Release() {
+	t.drop()
+	t.ims.Release()
+}
+
 func (t *Tiles) drop() {
 	for _, t := range t.m {
 		t.Release()

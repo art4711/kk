@@ -41,7 +41,8 @@ func (s *State) Handle(ei interface{}) (repaint bool, quit bool, publish bool) {
 			repaint = true
 		case lifecycle.CrossOff:
 			s.glctx = nil
-			quit = true
+			s.tiles.Release()
+			s.tiles = nil
 			return
 		}
 
