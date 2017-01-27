@@ -60,6 +60,21 @@ func (s *State) fRectBounds(x, y int) (geom.Point, geom.Point, geom.Point) {
 		geom.Point{s.ful.X + s.fst.X*geom.Pt(x), s.ful.Y + s.fst.X*geom.Pt(y+1)}
 }
 
+func (s *State) draw() {
+	s.glctx.ClearColor(1, 1, 1, 1)
+	s.glctx.Clear(gl.COLOR_BUFFER_BIT)
+
+	w, h := s.f.W(), s.f.H()
+
+	for y := 0; y < h; y++ {
+		for x := 0; x < w; x++ {
+			t := s.tiles.Get(s.f[y][x])
+			tl, tr, bl := s.fRectBounds(x, y)
+			t.Draw(s.wsz, tl, tr, bl, image.Rectangle{Max: s.tsz})
+		}
+	}
+}
+
 func (s *State) Handle(ei interface{}) (repaint bool, quit bool, publish bool) {
 	switch e := ei.(type) {
 	case lifecycle.Event:
@@ -92,7 +107,7 @@ func (s *State) Handle(ei interface{}) (repaint bool, quit bool, publish bool) {
 	case EvQ:
 		quit = true
 	case paint.Event:
-		s.Draw()
+		s.draw()
 		publish = true
 	case size.Event:
 		s.setSize(e)
@@ -101,19 +116,4 @@ func (s *State) Handle(ei interface{}) (repaint bool, quit bool, publish bool) {
 		log.Print(e)
 	}
 	return
-}
-
-func (s *State) Draw() {
-	s.glctx.ClearColor(1, 1, 1, 1)
-	s.glctx.Clear(gl.COLOR_BUFFER_BIT)
-
-	w, h := s.f.W(), s.f.H()
-
-	for y := 0; y < h; y++ {
-		for x := 0; x < w; x++ {
-			t := s.tiles.Get(s.f[y][x])
-			tl, tr, bl := s.fRectBounds(x, y)
-			t.Draw(s.wsz, tl, tr, bl, image.Rectangle{Max: s.tsz})
-		}
-	}
 }
