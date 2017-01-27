@@ -13,7 +13,7 @@ import (
 )
 
 type State struct {
-	tiles *Tiles
+	tiles Tiles
 	f     *Field
 	wsz   size.Event
 	glctx gl.Context
@@ -53,6 +53,7 @@ func (s *State) setSize(e size.Event) {
 	log.Print(e)
 	s.tsz.X = int(s.fst.X.Px(e.PixelsPerPt))
 	s.tsz.Y = int(s.fst.Y.Px(e.PixelsPerPt))
+	s.tiles.SetSz(s.tsz)
 }
 
 func (s *State) fRectBounds(x, y int) (geom.Point, geom.Point, geom.Point) {
@@ -71,12 +72,11 @@ func (s *State) Handle(ei interface{}) (repaint bool, quit bool, publish bool) {
 		switch e.Crosses(lifecycle.StageVisible) {
 		case lifecycle.CrossOn:
 			s.glctx, _ = e.DrawContext.(gl.Context)
-			s.tiles = NewTiles(s.glctx)
+			s.tiles.SetCtx(s.glctx)
 			repaint = true
 		case lifecycle.CrossOff:
 			s.glctx = nil
 			s.tiles.Release()
-			s.tiles = nil
 			return
 		}
 	case EvR:
@@ -114,7 +114,7 @@ func (s *State) Draw() {
 
 	for y := 0; y < h; y++ {
 		for x := 0; x < w; x++ {
-			t := s.tiles.Get(s.f[y][x], s.tsz)
+			t := s.tiles.Get(s.f[y][x])
 			tl, tr, bl := s.fRectBounds(x, y)
 			t.Draw(s.wsz, tl, tr, bl, image.Rectangle{Max: s.tsz})
 		}

@@ -23,23 +23,12 @@ type Tiles struct {
 	face font.Face
 }
 
-func NewTiles(glctx gl.Context) *Tiles {
-	return &Tiles{ims: glutil.NewImages(glctx)}
+func (t *Tiles) SetCtx(ctx gl.Context) {
+	t.Release()
+	t.ims = glutil.NewImages(ctx)
 }
 
-func (t *Tiles) Release() {
-	t.drop()
-	t.ims.Release()
-}
-
-func (t *Tiles) drop() {
-	for _, t := range t.m {
-		t.Release()
-	}
-	t.m = make(map[int]*glutil.Image)
-}
-
-func (t *Tiles) Get(n int, sz image.Point) *glutil.Image {
+func (t *Tiles) SetSz(sz image.Point) {
 	if t.sz != sz {
 		t.drop()
 		t.sz = sz
@@ -52,6 +41,24 @@ func (t *Tiles) Get(n int, sz image.Point) *glutil.Image {
 			Size: float64((sz.X + sz.Y) / 8),
 		})
 	}
+}
+
+func (t *Tiles) Release() {
+	t.drop()
+	if t.ims != nil {
+		t.ims.Release()
+		t.ims = nil
+	}
+}
+
+func (t *Tiles) drop() {
+	for _, t := range t.m {
+		t.Release()
+	}
+	t.m = make(map[int]*glutil.Image)
+}
+
+func (t *Tiles) Get(n int) *glutil.Image {
 	if t.m[n] == nil {
 		t.m[n] = t.genTex(n)
 	}
