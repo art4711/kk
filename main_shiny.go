@@ -8,8 +8,27 @@ import (
 
 	"golang.org/x/exp/shiny/driver/gldriver"
 	"golang.org/x/exp/shiny/screen"
+	"golang.org/x/mobile/event/key"
 	"golang.org/x/mobile/event/paint"
 )
+
+func keyFilter(ei interface{}) interface{} {
+	if e, ok := ei.(key.Event); ok && e.Direction == key.DirPress {
+		switch e.Code {
+		case key.CodeLeftArrow:
+			return kk.EvL{}
+		case key.CodeRightArrow:
+			return kk.EvR{}
+		case key.CodeUpArrow:
+			return kk.EvU{}
+		case key.CodeDownArrow:
+			return kk.EvD{}
+		case key.CodeEscape:
+			return kk.EvQ{}
+		}
+	}
+	return ei
+}
 
 func main() {
 	gldriver.Main(func(s screen.Screen) {
@@ -20,7 +39,8 @@ func main() {
 		}
 		defer w.Release()
 		for {
-			repaint, quit, publish := st.Handle(w.NextEvent())
+			e := w.NextEvent()
+			repaint, quit, publish := st.Handle(keyFilter(e))
 			if quit {
 				return
 			}

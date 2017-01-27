@@ -3,9 +3,7 @@ package kk
 import (
 	"image"
 	"log"
-	"math"
 
-	"golang.org/x/mobile/event/key"
 	"golang.org/x/mobile/event/lifecycle"
 	"golang.org/x/mobile/event/paint"
 	"golang.org/x/mobile/event/size"
@@ -20,11 +18,45 @@ type State struct {
 	wsz   size.Event
 	glctx gl.Context
 
-	touchStart touch.Event
+	ful geom.Point
+	fst geom.Point
+	tsz image.Point
 }
 
 func New() *State {
 	return &State{f: NewField()}
+}
+
+type EvL struct{}
+type EvR struct{}
+type EvU struct{}
+type EvD struct{}
+type EvQ struct{}
+
+func (s *State) setSize(e size.Event) {
+	s.wsz = e
+	x, y := e.WidthPt, e.HeightPt
+
+	if x > y {
+		s.ful.X = x - y
+		s.ful.Y = 0
+		s.fst.X = (y / geom.Pt(s.f.W()))
+		s.fst.Y = (y / geom.Pt(s.f.H()))
+	} else {
+		s.ful.X = 0
+		s.ful.Y = y - x
+		s.fst.X = (x / geom.Pt(s.f.W()))
+		s.fst.Y = (x / geom.Pt(s.f.H()))
+	}
+	log.Print(e)
+	s.tsz.X = int(s.fst.X.Px(e.PixelsPerPt))
+	s.tsz.Y = int(s.fst.Y.Px(e.PixelsPerPt))
+}
+
+func (s *State) fRectBounds(x, y int) (geom.Point, geom.Point, geom.Point) {
+	return geom.Point{s.ful.X + s.fst.X*geom.Pt(x), s.ful.Y + s.fst.X*geom.Pt(y)},
+		geom.Point{s.ful.X + s.fst.X*geom.Pt(x+1), s.ful.Y + s.fst.X*geom.Pt(y)},
+		geom.Point{s.ful.X + s.fst.X*geom.Pt(x), s.ful.Y + s.fst.X*geom.Pt(y+1)}
 }
 
 func (s *State) Handle(ei interface{}) (repaint bool, quit bool, publish bool) {
@@ -45,53 +77,27 @@ func (s *State) Handle(ei interface{}) (repaint bool, quit bool, publish bool) {
 			s.tiles = nil
 			return
 		}
-
-	case key.Event:
-		if e.Code == key.CodeEscape {
-			quit = true
-			return
-		}
-		if e.Direction == key.DirPress {
-			switch e.Code {
-			case key.CodeLeftArrow:
-				s.f.Left()
-			case key.CodeRightArrow:
-				s.f.Right()
-			case key.CodeUpArrow:
-				s.f.Up()
-			case key.CodeDownArrow:
-				s.f.Down()
-			}
-			repaint = true
-		}
-
+	case EvR:
+		s.f.Right()
+		repaint = true
+	case EvL:
+		s.f.Left()
+		repaint = true
+	case EvU:
+		s.f.Up()
+		repaint = true
+	case EvD:
+		s.f.Down()
+		repaint = true
+	case EvQ:
+		quit = true
 	case paint.Event:
 		s.Draw()
 		publish = true
 	case size.Event:
-		s.wsz = e
+		s.setSize(e)
 
 	case touch.Event:
-		switch e.Type {
-		case touch.TypeBegin:
-			s.touchStart = e
-		case touch.TypeEnd:
-			x, y := e.X-s.touchStart.X, e.Y-s.touchStart.Y
-			if math.Abs(float64(x)) > math.Abs(float64(y)) {
-				if x < 0 {
-					s.f.Left()
-				} else {
-					s.f.Right()
-				}
-			} else {
-				if y < 0 {
-					s.f.Up()
-				} else {
-					s.f.Down()
-				}
-			}
-			repaint = true
-		}
 	case error:
 		log.Print(e)
 	}
@@ -104,17 +110,11 @@ func (s *State) Draw() {
 
 	w, h := s.f.W(), s.f.H()
 
-	// We actually want to create the tiles with correct pixel sizes so the font looks good ...
-	tsz := image.Point{s.wsz.WidthPx / w, s.wsz.HeightPx / h}
-	// ..., but we need to render them in geom space.
-	tpsz := geom.Point{s.wsz.WidthPt / geom.Pt(w), s.wsz.HeightPt / geom.Pt(h)}
 	for y := 0; y < h; y++ {
 		for x := 0; x < w; x++ {
-			t := s.tiles.Get(s.f[y][x], tsz)
-			tl := geom.Point{tpsz.X * geom.Pt(x), tpsz.Y * geom.Pt(y)}
-			tr := geom.Point{tpsz.X * geom.Pt(x+1), tpsz.Y * geom.Pt(y)}
-			bl := geom.Point{tpsz.X * geom.Pt(x), tpsz.Y * geom.Pt(y+1)}
-			t.Draw(s.wsz, tl, tr, bl, image.Rectangle{Max: tsz})
+			t := s.tiles.Get(s.f[y][x], s.tsz)
+			tl, tr, bl := s.fRectBounds(x, y)
+			t.Draw(s.wsz, tl, tr, bl, image.Rectangle{Max: s.tsz})
 		}
 	}
 }
