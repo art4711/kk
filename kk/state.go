@@ -99,7 +99,7 @@ func (s *State) Handle(ei interface{}) (repaint bool, quit bool, publish bool) {
 }
 
 func (s *State) Draw() {
-	s.glctx.ClearColor(0, 0, 0, 1)
+	s.glctx.ClearColor(1, 1, 1, 1)
 	s.glctx.Clear(gl.COLOR_BUFFER_BIT)
 
 	w, h := s.f.W(), s.f.H()
