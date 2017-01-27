@@ -33,20 +33,22 @@ type EvU struct{}
 type EvD struct{}
 type EvQ struct{}
 
+const margin = 0.02
+
 func (s *State) setSize(e size.Event) {
 	s.wsz = e
 	x, y := e.WidthPt, e.HeightPt
 
 	if x > y {
-		s.ful.X = x - y
-		s.ful.Y = 0
-		s.fst.X = (y / geom.Pt(s.f.W()))
-		s.fst.Y = (y / geom.Pt(s.f.H()))
+		s.ful.X = x - y*(1-margin)
+		s.ful.Y = y * margin
+		s.fst.X = (y * (1 - 2*margin) / geom.Pt(s.f.W()))
+		s.fst.Y = (y * (1 - 2*margin) / geom.Pt(s.f.H()))
 	} else {
-		s.ful.X = 0
-		s.ful.Y = y - x
-		s.fst.X = (x / geom.Pt(s.f.W()))
-		s.fst.Y = (x / geom.Pt(s.f.H()))
+		s.ful.X = x * margin
+		s.ful.Y = y - x*(1-margin)
+		s.fst.X = (x * (1 - 2*margin) / geom.Pt(s.f.W()))
+		s.fst.Y = (x * (1 - 2*margin) / geom.Pt(s.f.H()))
 	}
 	log.Print(e)
 	s.tsz.X = int(s.fst.X.Px(e.PixelsPerPt))
