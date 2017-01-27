@@ -6,7 +6,6 @@ import (
 	"image/color"
 	"image/draw"
 	"log"
-	"sync"
 
 	"github.com/golang/freetype/truetype"
 	"golang.org/x/image/font"
@@ -19,7 +18,6 @@ import (
 type Tiles struct {
 	ims *glutil.Images
 	m   map[int]*glutil.Image
-	mtx sync.Mutex
 	sz  image.Point
 
 	face font.Face
@@ -42,8 +40,6 @@ func (t *Tiles) drop() {
 }
 
 func (t *Tiles) Get(n int, sz image.Point) *glutil.Image {
-	t.mtx.Lock()
-	defer t.mtx.Unlock()
 	if t.sz != sz {
 		t.drop()
 		t.sz = sz
