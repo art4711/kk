@@ -7,7 +7,6 @@ import (
 	"golang.org/x/mobile/event/lifecycle"
 	"golang.org/x/mobile/event/paint"
 	"golang.org/x/mobile/event/size"
-	"golang.org/x/mobile/event/touch"
 	"golang.org/x/mobile/geom"
 	"golang.org/x/mobile/gl"
 )
@@ -50,7 +49,6 @@ func (s *State) setSize(e size.Event) {
 		s.fst.X = (x * (1 - 2*margin) / geom.Pt(s.f.W()))
 		s.fst.Y = (x * (1 - 2*margin) / geom.Pt(s.f.H()))
 	}
-	log.Print(e)
 	s.tsz.X = int(s.fst.X.Px(e.PixelsPerPt))
 	s.tsz.Y = int(s.fst.Y.Px(e.PixelsPerPt))
 	s.tiles.SetSz(s.tsz)
@@ -99,7 +97,6 @@ func (s *State) Handle(ei interface{}) (repaint bool, quit bool, publish bool) {
 	case size.Event:
 		s.setSize(e)
 
-	case touch.Event:
 	case error:
 		log.Print(e)
 	}
