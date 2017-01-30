@@ -13,9 +13,10 @@ import (
 
 type State struct {
 	tiles Tiles
-	f     *Field
-	wsz   size.Event
+	f     Field
+
 	glctx gl.Context
+	wsz   size.Event
 
 	ful geom.Point
 	fst geom.Point
@@ -23,7 +24,9 @@ type State struct {
 }
 
 func New() *State {
-	return &State{f: NewField()}
+	s := &State{}
+	s.f.Init()
+	return s
 }
 
 type EvL struct{}

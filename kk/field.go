@@ -7,6 +7,11 @@ const height = 4
 
 type Field [height][width]int
 
+func (f *Field) Init() {
+	f.r()
+	f.r()
+}
+
 func (f *Field) r() {
 	for {
 		i := rand.Intn(height * width)
@@ -148,11 +153,4 @@ func (f *Field) Down() {
 		}
 	}
 	f.set(n)
-}
-
-func NewField() *Field {
-	f := &Field{}
-	f.r()
-	f.r()
-	return f
 }
