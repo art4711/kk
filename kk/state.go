@@ -4,9 +4,14 @@ import (
 	"image"
 	"log"
 
+	"golang.org/x/exp/shiny/unit"
+	"golang.org/x/exp/shiny/widget"
+	"golang.org/x/exp/shiny/widget/node"
+	"golang.org/x/exp/shiny/widget/theme"
 	"golang.org/x/mobile/event/lifecycle"
 	"golang.org/x/mobile/event/paint"
 	"golang.org/x/mobile/event/size"
+	"golang.org/x/mobile/exp/gl/glutil"
 	"golang.org/x/mobile/geom"
 	"golang.org/x/mobile/gl"
 )
@@ -21,6 +26,12 @@ type State struct {
 	ful geom.Point
 	fst geom.Point
 	tsz image.Point
+
+	buttons *widget.Uniform
+	field   *widget.Uniform
+
+	butImg *glutil.Image
+	t      theme.Theme
 }
 
 func New() *State {
@@ -37,25 +48,96 @@ type EvQ struct{}
 
 const margin = 0.02
 
-func (s *State) setSize(e size.Event) {
-	s.wsz = e
-	x, y := e.WidthPt, e.HeightPt
-
-	if x > y {
-		s.ful.X = x - y*(1-margin)
-		s.ful.Y = y * margin
-		s.fst.X = (y * (1 - 2*margin) / geom.Pt(s.f.W()))
-		s.fst.Y = (y * (1 - 2*margin) / geom.Pt(s.f.H()))
-	} else {
-		s.ful.X = x * margin
-		s.ful.Y = y - x*(1-margin)
-		s.fst.X = (x * (1 - 2*margin) / geom.Pt(s.f.W()))
-		s.fst.Y = (x * (1 - 2*margin) / geom.Pt(s.f.H()))
-	}
-	s.tsz.X = int(s.fst.X.Px(e.PixelsPerPt))
-	s.tsz.Y = int(s.fst.Y.Px(e.PixelsPerPt))
-	s.tiles.SetSz(s.tsz)
+// helper.
+func stretch(n node.Node, alongWeight int) node.Node {
+	return widget.WithLayoutData(n, widget.FlowLayoutData{
+		AlongWeight:  alongWeight,
+		ExpandAlong:  true,
+		ShrinkAlong:  true,
+		ExpandAcross: true,
+		ShrinkAcross: true,
+	})
 }
+
+// helper.
+func (s *State) ip2gp(ip image.Point) geom.Point {
+	return geom.Point{
+		X: geom.Pt(ip.X) / geom.Pt(s.wsz.PixelsPerPt),
+		Y: geom.Pt(ip.Y) / geom.Pt(s.wsz.PixelsPerPt),
+	}
+}
+
+func (s *State) setSize(e size.Event) {
+	s.t = theme.Theme{DPI: float64(unit.PointsPerInch * e.PixelsPerPt)}
+
+	horizontal := e.Orientation == size.OrientationLandscape
+
+	padPx := e.WidthPx / 50
+	bAx := widget.AxisHorizontal
+	aAx := widget.AxisVertical
+	if horizontal {
+		padPx = e.HeightPx / 50
+		bAx = widget.AxisVertical
+		aAx = widget.AxisHorizontal
+	}
+
+	s.buttons = widget.NewUniform(theme.Neutral,
+		widget.NewPadder(widget.AxisBoth, unit.Pixels(float64(padPx)),
+			widget.NewFlow(bAx,
+				widget.NewLabel("Foo"),
+				stretch(widget.NewSpace(), 1),
+				widget.NewLabel("Bar"),
+			),
+		),
+	)
+	s.field = widget.NewUniform(theme.Light, nil)
+	all := widget.NewFlow(aAx,
+		stretch(s.buttons, 0),
+		stretch(widget.NewPadder(widget.AxisBoth, unit.Pixels(float64(padPx)), s.field), 1),
+	)
+	all.Measure(&s.t, e.WidthPx, e.HeightPx)
+	all.Rect = image.Rectangle{Max: image.Pt(e.WidthPx, e.HeightPx)}
+	all.Layout(&s.t)
+
+	log.Print("Butt: ", s.buttons.Rect)
+	log.Print("field: ", s.field.Rect)
+
+	s.wsz = e
+
+	r := s.field.Rect
+	dx, dy := r.Dx(), r.Dy()
+	if dx > dy {
+		r.Min.X += dx - dy
+	} else {
+		r.Min.Y += dy - dx
+	}
+
+	s.tsz.X = r.Dx() / s.f.W()
+	s.tsz.Y = r.Dy() / s.f.H()
+
+	s.fst = s.ip2gp(s.tsz)
+	s.ful = s.ip2gp(r.Min)
+
+	s.tiles.SetSz(s.tsz)
+	if s.butImg != nil {
+		s.butImg.Release()
+		s.butImg = nil
+	}
+}
+
+/*
+func (s *State) drawButt() {
+	if s.butImg == nil {
+		s.butImg = s.t.ims.NewImage(s.buttons.Rect.Dx(), s.buttons.Dy())
+		s.buttons.PaintBase(&node.PaintBaseContext{
+			Theme: &s.t,
+			Dst:   s.butImg.RGBA,
+		}, image.Point{})
+		s.butImg.Upload()
+	}
+	t.Draw(s.wsz,
+}
+*/
 
 func (s *State) fRectBounds(x, y int) (geom.Point, geom.Point, geom.Point) {
 	return geom.Point{s.ful.X + s.fst.X*geom.Pt(x), s.ful.Y + s.fst.X*geom.Pt(y)},
@@ -70,8 +152,9 @@ func (s *State) draw(pub func()) {
 	s.glctx.ClearColor(1, 1, 1, 1)
 	s.glctx.Clear(gl.COLOR_BUFFER_BIT)
 
-	w, h := s.f.W(), s.f.H()
+	//	s.drawButt()
 
+	w, h := s.f.W(), s.f.H()
 	for y := 0; y < h; y++ {
 		for x := 0; x < w; x++ {
 			t := s.tiles.Get(s.f[y][x])
