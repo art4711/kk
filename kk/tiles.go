@@ -36,7 +36,6 @@ func (t *Tiles) SetSz(sz image.Point) {
 		if err != nil {
 			log.Fatal(err)
 		}
-		// notice that the use of face is protected by the mutex
 		t.face = truetype.NewFace(f, &truetype.Options{
 			Size: float64((sz.X + sz.Y) / 8),
 		})
