@@ -63,7 +63,10 @@ func (s *State) fRectBounds(x, y int) (geom.Point, geom.Point, geom.Point) {
 		geom.Point{s.ful.X + s.fst.X*geom.Pt(x), s.ful.Y + s.fst.X*geom.Pt(y+1)}
 }
 
-func (s *State) draw() {
+func (s *State) draw(pub func()) {
+	if s.glctx == nil || s.ful.X == 0 {
+		return
+	}
 	s.glctx.ClearColor(1, 1, 1, 1)
 	s.glctx.Clear(gl.COLOR_BUFFER_BIT)
 
@@ -76,47 +79,41 @@ func (s *State) draw() {
 			t.Draw(s.wsz, tl, tr, bl, image.Rectangle{Max: s.tsz})
 		}
 	}
+	pub()
 }
 
-func (s *State) Handle(ei interface{}) (repaint bool, quit bool, publish bool) {
+func (s *State) Handle(ei interface{}, pub func()) bool {
 	switch e := ei.(type) {
 	case lifecycle.Event:
 		if e.To == lifecycle.StageDead {
-			quit = true
-			return
+			return false
 		}
 		switch e.Crosses(lifecycle.StageVisible) {
 		case lifecycle.CrossOn:
 			s.glctx, _ = e.DrawContext.(gl.Context)
 			s.tiles.SetCtx(s.glctx)
-			repaint = true
 		case lifecycle.CrossOff:
 			s.glctx = nil
 			s.tiles.Release()
-			return
+			return true
 		}
 	case EvR:
 		s.f.Right()
-		repaint = true
 	case EvL:
 		s.f.Left()
-		repaint = true
 	case EvU:
 		s.f.Up()
-		repaint = true
 	case EvD:
 		s.f.Down()
-		repaint = true
 	case EvQ:
-		quit = true
+		return false
 	case paint.Event:
-		s.draw()
-		publish = true
 	case size.Event:
 		s.setSize(e)
-
 	case error:
 		log.Print(e)
+		return true
 	}
-	return
+	s.draw(pub)
+	return true
 }

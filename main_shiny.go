@@ -9,7 +9,6 @@ import (
 	"golang.org/x/exp/shiny/driver/gldriver"
 	"golang.org/x/exp/shiny/screen"
 	"golang.org/x/mobile/event/key"
-	"golang.org/x/mobile/event/paint"
 )
 
 func keyFilter(ei interface{}) interface{} {
@@ -42,17 +41,7 @@ func main() {
 			log.Fatal(err)
 		}
 		defer w.Release()
-		for {
-			repaint, quit, publish := st.Handle(filters(w.NextEvent()))
-			if quit {
-				return
-			}
-			if repaint {
-				w.Send(paint.Event{})
-			}
-			if publish {
-				w.Publish()
-			}
+		for st.Handle(filters(w.NextEvent()), func() { w.Publish() }) {
 		}
 	})
 }

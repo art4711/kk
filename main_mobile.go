@@ -7,7 +7,6 @@ import (
 	"math"
 
 	"golang.org/x/mobile/app"
-	"golang.org/x/mobile/event/paint"
 	"golang.org/x/mobile/event/touch"
 )
 
@@ -47,15 +46,8 @@ func main() {
 		a.RegisterFilter(tf.TouchFilter)
 
 		for e := range a.Events() {
-			repaint, quit, publish := s.Handle(a.Filter(e))
-			if quit {
+			if !s.Handle(a.Filter(e), func() { a.Publish() }) {
 				return
-			}
-			if repaint {
-				a.Send(paint.Event{})
-			}
-			if publish {
-				a.Publish()
 			}
 		}
 	})
