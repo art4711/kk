@@ -125,19 +125,21 @@ func (s *State) setSize(e size.Event) {
 	}
 }
 
-/*
 func (s *State) drawButt() {
 	if s.butImg == nil {
-		s.butImg = s.t.ims.NewImage(s.buttons.Rect.Dx(), s.buttons.Dy())
+		s.butImg = s.tiles.ims.NewImage(s.buttons.Rect.Dx(), s.buttons.Rect.Dy())
 		s.buttons.PaintBase(&node.PaintBaseContext{
 			Theme: &s.t,
 			Dst:   s.butImg.RGBA,
 		}, image.Point{})
 		s.butImg.Upload()
 	}
-	t.Draw(s.wsz,
+	tl := s.buttons.Rect.Min
+	br := s.buttons.Rect.Max
+	tr := image.Pt(br.X, tl.Y)
+	bl := image.Pt(tl.X, br.Y)
+	s.butImg.Draw(s.wsz, s.ip2gp(tl), s.ip2gp(tr), s.ip2gp(bl), image.Rectangle{Max: s.buttons.Rect.Size()})
 }
-*/
 
 func (s *State) fRectBounds(x, y int) (geom.Point, geom.Point, geom.Point) {
 	return geom.Point{s.ful.X + s.fst.X*geom.Pt(x), s.ful.Y + s.fst.X*geom.Pt(y)},
@@ -152,7 +154,7 @@ func (s *State) draw(pub func()) {
 	s.glctx.ClearColor(1, 1, 1, 1)
 	s.glctx.Clear(gl.COLOR_BUFFER_BIT)
 
-	//	s.drawButt()
+	s.drawButt()
 
 	w, h := s.f.W(), s.f.H()
 	for y := 0; y < h; y++ {
