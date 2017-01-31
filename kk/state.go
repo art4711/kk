@@ -23,12 +23,10 @@ type State struct {
 	glctx gl.Context
 	wsz   size.Event
 
-	ful geom.Point
-	fst geom.Point
+	ful image.Point
 	tsz image.Point
 
 	buttons *widget.Uniform
-	field   *widget.Uniform
 
 	butImg *glutil.Image
 	t      theme.Theme
@@ -46,8 +44,6 @@ type EvU struct{}
 type EvD struct{}
 type EvQ struct{}
 
-const margin = 0.02
-
 // helper.
 func stretch(n node.Node, alongWeight int) node.Node {
 	return widget.WithLayoutData(n, widget.FlowLayoutData{
@@ -59,7 +55,7 @@ func stretch(n node.Node, alongWeight int) node.Node {
 	})
 }
 
-// helper.
+// helper to translate image points to geom points for glutil.Images.
 func (s *State) ip2gp(ip image.Point) geom.Point {
 	return geom.Point{
 		X: geom.Pt(ip.X) / geom.Pt(s.wsz.PixelsPerPt),
@@ -67,10 +63,21 @@ func (s *State) ip2gp(ip image.Point) geom.Point {
 	}
 }
 
+// helper to extract screen coords for a widget.
+func widgetScreenRect(e *node.Embed) image.Rectangle {
+	r := e.Rect
+	for e.Parent != nil {
+		e = e.Parent
+		r = r.Add(e.Rect.Min)
+	}
+	return r
+}
+
 func (s *State) setSize(e size.Event) {
+	s.wsz = e
 	s.t = theme.Theme{DPI: float64(unit.PointsPerInch * e.PixelsPerPt)}
 
-	horizontal := e.Orientation == size.OrientationLandscape
+	horizontal := e.Orientation == size.OrientationLandscape || e.WidthPx > e.HeightPx
 
 	padPx := e.WidthPx / 50
 	bAx := widget.AxisHorizontal
@@ -81,6 +88,8 @@ func (s *State) setSize(e size.Event) {
 		aAx = widget.AxisHorizontal
 	}
 
+	// We abuse shiny widgets to do the layout for us (and also
+	// render the button bar for now).
 	s.buttons = widget.NewUniform(theme.Neutral,
 		widget.NewPadder(widget.AxisBoth, unit.Pixels(float64(padPx)),
 			widget.NewFlow(bAx,
@@ -90,21 +99,19 @@ func (s *State) setSize(e size.Event) {
 			),
 		),
 	)
-	s.field = widget.NewUniform(theme.Light, nil)
+	// field
+	f := widget.NewUniform(theme.Light, nil)
 	all := widget.NewFlow(aAx,
 		stretch(s.buttons, 0),
-		stretch(widget.NewPadder(widget.AxisBoth, unit.Pixels(float64(padPx)), s.field), 1),
+		stretch(widget.NewPadder(widget.AxisBoth, unit.Pixels(float64(padPx)), f), 1),
 	)
+	// do the layout.
 	all.Measure(&s.t, e.WidthPx, e.HeightPx)
 	all.Rect = image.Rectangle{Max: image.Pt(e.WidthPx, e.HeightPx)}
 	all.Layout(&s.t)
 
-	log.Print("Butt: ", s.buttons.Rect)
-	log.Print("field: ", s.field.Rect)
-
-	s.wsz = e
-
-	r := s.field.Rect
+	// square the field rectangle.
+	r := widgetScreenRect(&f.Embed)
 	dx, dy := r.Dx(), r.Dy()
 	if dx > dy {
 		r.Min.X += dx - dy
@@ -112,11 +119,9 @@ func (s *State) setSize(e size.Event) {
 		r.Min.Y += dy - dx
 	}
 
+	s.ful = r.Min
 	s.tsz.X = r.Dx() / s.f.W()
 	s.tsz.Y = r.Dy() / s.f.H()
-
-	s.fst = s.ip2gp(s.tsz)
-	s.ful = s.ip2gp(r.Min)
 
 	s.tiles.SetSz(s.tsz)
 	if s.butImg != nil {
@@ -126,25 +131,26 @@ func (s *State) setSize(e size.Event) {
 }
 
 func (s *State) drawButt() {
+	r := widgetScreenRect(&s.buttons.Embed)
 	if s.butImg == nil {
-		s.butImg = s.tiles.ims.NewImage(s.buttons.Rect.Dx(), s.buttons.Rect.Dy())
+		s.butImg = s.tiles.ims.NewImage(r.Dx(), r.Dy())
 		s.buttons.PaintBase(&node.PaintBaseContext{
 			Theme: &s.t,
 			Dst:   s.butImg.RGBA,
 		}, image.Point{})
 		s.butImg.Upload()
 	}
-	tl := s.buttons.Rect.Min
-	br := s.buttons.Rect.Max
+	tl := r.Min
+	br := r.Max
 	tr := image.Pt(br.X, tl.Y)
 	bl := image.Pt(tl.X, br.Y)
-	s.butImg.Draw(s.wsz, s.ip2gp(tl), s.ip2gp(tr), s.ip2gp(bl), image.Rectangle{Max: s.buttons.Rect.Size()})
+	s.butImg.Draw(s.wsz, s.ip2gp(tl), s.ip2gp(tr), s.ip2gp(bl), image.Rectangle{Max: r.Size()})
 }
 
 func (s *State) fRectBounds(x, y int) (geom.Point, geom.Point, geom.Point) {
-	return geom.Point{s.ful.X + s.fst.X*geom.Pt(x), s.ful.Y + s.fst.X*geom.Pt(y)},
-		geom.Point{s.ful.X + s.fst.X*geom.Pt(x+1), s.ful.Y + s.fst.X*geom.Pt(y)},
-		geom.Point{s.ful.X + s.fst.X*geom.Pt(x), s.ful.Y + s.fst.X*geom.Pt(y+1)}
+	return s.ip2gp(image.Pt(s.ful.X+s.tsz.X*x, s.ful.Y+s.tsz.Y*y)),
+		s.ip2gp(image.Pt(s.ful.X+s.tsz.X*(x+1), s.ful.Y+s.tsz.Y*y)),
+		s.ip2gp(image.Pt(s.ful.X+s.tsz.X*x, s.ful.Y+s.tsz.Y*(y+1)))
 }
 
 func (s *State) draw(pub func()) {
