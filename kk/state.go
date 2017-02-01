@@ -28,6 +28,8 @@ type State struct {
 	tiles Tiles
 	f     Field
 
+	saved *Field
+
 	glctx gl.Context
 	wsz   size.Event
 
@@ -73,6 +75,15 @@ func (s *State) Handle(ei interface{}, pub func()) bool {
 		s.f.Down()
 	case EvQ:
 		return false
+	case EvReset:
+		s.f.Init()
+	case EvSave:
+		f := s.f
+		s.saved = &f
+	case EvLoad:
+		if s.saved != nil {
+			s.f = *s.saved
+		}
 	case paint.Event:
 	case size.Event:
 		s.setSize(e)
@@ -104,9 +115,11 @@ func (s *State) clickOrTouch(ps, pe image.Point) interface{} {
 			}
 		}
 	case ps.In(s.buttons[0].r):
+		return EvSave{}
 	case ps.In(s.buttons[1].r):
+		return EvLoad{}
 	case ps.In(s.buttons[2].r):
-		return EvQ{}
+		return EvReset{}
 	}
 	return nil
 }
@@ -142,6 +155,9 @@ type EvR struct{}
 type EvU struct{}
 type EvD struct{}
 type EvQ struct{}
+type EvReset struct{}
+type EvLoad struct{}
+type EvSave struct{}
 
 // helper.
 func stretch(n node.Node, alongWeight int) node.Node {
