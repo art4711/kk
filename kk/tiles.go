@@ -82,7 +82,8 @@ func (t *Tiles) Get(tl T) *glutil.Image {
 }
 
 type Butt struct {
-	Label string
+	Label  string
+	Invert bool
 }
 
 func (b Butt) Gen(t *Tiles) *glutil.Image {
@@ -95,18 +96,27 @@ func (b Butt) Gen(t *Tiles) *glutil.Image {
 
 	img := tile.RGBA
 	r := img.Bounds()
-	draw.Draw(img, image.Rect(r.Min.X+2, r.Min.Y+2, r.Max.X-2, r.Min.Y+4), image.Black, image.Point{}, draw.Src)
-	draw.Draw(img, image.Rect(r.Min.X+2, r.Min.Y+2, r.Min.X+4, r.Max.Y-2), image.Black, image.Point{}, draw.Src)
 
-	draw.Draw(img, image.Rect(r.Max.X-4, r.Min.Y+2, r.Max.X-2, r.Max.Y-2), image.Black, image.Point{}, draw.Src)
-	draw.Draw(img, image.Rect(r.Min.X+2, r.Max.Y-4, r.Max.X-2, r.Max.Y-2), image.Black, image.Point{}, draw.Src)
+	fg := image.Black
+	bg := image.White
+
+	if b.Invert {
+		fg, bg = bg, fg
+	}
+
+	draw.Draw(img, r, bg, image.Point{}, draw.Src)
+
+	draw.Draw(img, image.Rect(r.Min.X+2, r.Min.Y+2, r.Max.X-2, r.Min.Y+4), fg, image.Point{}, draw.Src)
+	draw.Draw(img, image.Rect(r.Min.X+2, r.Min.Y+2, r.Min.X+4, r.Max.Y-2), fg, image.Point{}, draw.Src)
+	draw.Draw(img, image.Rect(r.Max.X-4, r.Min.Y+2, r.Max.X-2, r.Max.Y-2), fg, image.Point{}, draw.Src)
+	draw.Draw(img, image.Rect(r.Min.X+2, r.Max.Y-4, r.Max.X-2, r.Max.Y-2), fg, image.Point{}, draw.Src)
 
 	dot := fixed.P(t.buttSz.X/2, t.buttSz.Y/2)
 	dot.Y += t.buttFace.Metrics().Ascent / 3
 	dot.X -= font.MeasureString(t.buttFace, s) / 2
 	d := font.Drawer{
 		Dst:  img,
-		Src:  image.Black,
+		Src:  fg,
 		Face: t.buttFace,
 		Dot:  dot,
 	}

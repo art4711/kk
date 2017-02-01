@@ -100,7 +100,12 @@ func (s *State) Handle(ei interface{}, pub func()) bool {
 func (s *State) clickOrTouch(start bool, p image.Point) interface{} {
 	if start {
 		s.touchStart = p
-		return nil
+		for i := range s.buttons {
+			if p.In(s.buttons[i].r) {
+				s.buttons[i].b.Invert = true
+			}
+		}
+		return paint.Event{}
 	}
 	ps := s.touchStart
 	pe := p
@@ -121,10 +126,13 @@ func (s *State) clickOrTouch(start bool, p image.Point) interface{} {
 			}
 		}
 	case ps.In(s.buttons[0].r):
+		s.buttons[0].b.Invert = false
 		return EvSave{}
 	case ps.In(s.buttons[1].r):
+		s.buttons[1].b.Invert = false
 		return EvLoad{}
 	case ps.In(s.buttons[2].r):
+		s.buttons[2].b.Invert = false
 		return EvReset{}
 	}
 	return nil
