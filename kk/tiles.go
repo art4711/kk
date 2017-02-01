@@ -17,7 +17,7 @@ import (
 
 type Tiles struct {
 	ims *glutil.Images
-	m   map[int]*glutil.Image
+	m   map[T]*glutil.Image
 
 	buttSz image.Point
 	sz     image.Point
@@ -26,11 +26,9 @@ type Tiles struct {
 	buttFace font.Face
 }
 
-const (
-	Save  = -10
-	Load  = -11
-	Reset = -12
-)
+type T interface {
+	Gen(*Tiles) *glutil.Image
+}
 
 func (t *Tiles) SetCtx(ctx gl.Context) {
 	t.Release()
@@ -56,7 +54,7 @@ func (t *Tiles) SetSz(sz, buttSz image.Point) {
 			Size: float64((sz.X + sz.Y) / 8),
 		})
 		t.buttFace = truetype.NewFace(fnt, &truetype.Options{
-			Size: float64(buttSz.X / 2),
+			Size: float64(buttSz.X / 4),
 		})
 	}
 }
@@ -73,31 +71,27 @@ func (t *Tiles) drop() {
 	for _, t := range t.m {
 		t.Release()
 	}
-	t.m = make(map[int]*glutil.Image)
+	t.m = make(map[T]*glutil.Image)
 }
 
-func (t *Tiles) Get(n int) *glutil.Image {
-	if t.m[n] == nil {
-		if n < 0 {
-			t.m[n] = t.genButt(n)
-		} else {
-			t.m[n] = t.genTex(n)
-		}
+func (t *Tiles) Get(tl T) *glutil.Image {
+	if t.m[tl] == nil {
+		t.m[tl] = tl.Gen(t)
 	}
-	return t.m[n]
+	return t.m[tl]
 }
 
-func (t *Tiles) genButt(n int) *glutil.Image {
+type Butt struct {
+	Label string
+}
+
+func (b Butt) Gen(t *Tiles) *glutil.Image {
+	// can't be a pointer receiver because we want the interface
+	// value compare the struct contents, not pointers for the
+	// map.
+
 	tile := t.ims.NewImage(t.buttSz.X, t.buttSz.Y)
-	s := "X"
-	switch n {
-	case Save:
-		s = "S"
-	case Load:
-		s = "L"
-	case Reset:
-		s = "R"
-	}
+	s := b.Label
 
 	img := tile.RGBA
 	r := img.Bounds()
@@ -129,7 +123,9 @@ var pal = [...][3]float32{
 	{1.0, 0.0, 0.0},
 }
 
-func (t *Tiles) genTex(n int) *glutil.Image {
+type FT int
+
+func (n FT) Gen(t *Tiles) *glutil.Image {
 	img := t.ims.NewImage(t.sz.X, t.sz.Y)
 
 	p := n / 6

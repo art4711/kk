@@ -19,7 +19,7 @@ import (
 )
 
 type butt struct {
-	b int
+	b Butt
 	w *widget.Uniform
 	r image.Rectangle
 }
@@ -207,7 +207,7 @@ func (s *State) setSize(e size.Event) {
 
 	// We abuse shiny widgets to do the layout for us.
 
-	s.buttons = []butt{{b: Save}, {b: Load}, {b: Reset}}
+	s.buttons = []butt{{b: Butt{"Save"}}, {b: Butt{"Load"}}, {b: Butt{"Reset"}}}
 
 	for i := range s.buttons {
 		s.buttons[i].w = widget.NewUniform(theme.Light, nil)
@@ -288,7 +288,7 @@ func (s *State) draw(pub func()) {
 	w, h := s.f.W(), s.f.H()
 	for y := 0; y < h; y++ {
 		for x := 0; x < w; x++ {
-			t := s.tiles.Get(s.f[y][x])
+			t := s.tiles.Get(FT(s.f[y][x]))
 			tl, tr, bl := s.fRectBounds(x, y)
 			t.Draw(s.wsz, tl, tr, bl, image.Rectangle{Max: s.tsz})
 		}
