@@ -97,7 +97,13 @@ func (s *State) Handle(ei interface{}, pub func()) bool {
 	return true
 }
 
-func (s *State) clickOrTouch(ps, pe image.Point) interface{} {
+func (s *State) clickOrTouch(start bool, p image.Point) interface{} {
+	if start {
+		s.touchStart = p
+		return nil
+	}
+	ps := s.touchStart
+	pe := p
 	switch {
 	case ps.In(s.fr):
 		dp := pe.Sub(ps)
@@ -127,10 +133,8 @@ func (s *State) clickOrTouch(ps, pe image.Point) interface{} {
 func (s *State) EvFilter(ei interface{}) interface{} {
 	if e, ok := ei.(touch.Event); ok {
 		switch e.Type {
-		case touch.TypeBegin:
-			s.touchStart = image.Pt(int(e.X), int(e.Y))
-		case touch.TypeEnd:
-			ne := s.clickOrTouch(s.touchStart, image.Pt(int(e.X), int(e.Y)))
+		case touch.TypeBegin, touch.TypeEnd:
+			ne := s.clickOrTouch(e.Type == touch.TypeBegin, image.Pt(int(e.X), int(e.Y)))
 			if ne != nil {
 				return ne
 			}
@@ -138,10 +142,8 @@ func (s *State) EvFilter(ei interface{}) interface{} {
 	}
 	if e, ok := ei.(mouse.Event); ok && e.Button == mouse.ButtonLeft {
 		switch e.Direction {
-		case mouse.DirPress:
-			s.touchStart = image.Pt(int(e.X), int(e.Y))
-		case mouse.DirRelease:
-			ne := s.clickOrTouch(s.touchStart, image.Pt(int(e.X), int(e.Y)))
+		case mouse.DirPress, mouse.DirRelease:
+			ne := s.clickOrTouch(e.Direction == mouse.DirPress, image.Pt(int(e.X), int(e.Y)))
 			if ne != nil {
 				return ne
 			}
@@ -207,7 +209,11 @@ func (s *State) setSize(e size.Event) {
 
 	// We abuse shiny widgets to do the layout for us.
 
-	s.buttons = []butt{{b: Butt{"Save"}}, {b: Butt{"Load"}}, {b: Butt{"Reset"}}}
+	s.buttons = []butt{
+		{b: Butt{Label: "Save"}},
+		{b: Butt{Label: "Load"}},
+		{b: Butt{Label: "Reset"}},
+	}
 
 	for i := range s.buttons {
 		s.buttons[i].w = widget.NewUniform(theme.Light, nil)
