@@ -8,6 +8,11 @@ const height = 4
 type Field [height][width]int
 
 func (f *Field) Init() {
+	for x := range *f {
+		for y := range (*f)[x] {
+			(*f)[x][y] = 0
+		}
+	}
 	f.r()
 	f.r()
 }
