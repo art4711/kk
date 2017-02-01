@@ -185,6 +185,8 @@ func (s *State) Handle(ei interface{}, pub func()) bool {
 			s.tiles.SetCtx(s.glctx)
 		case lifecycle.CrossOff:
 			s.glctx = nil
+			s.butImg.Release()
+			s.butImg = nil
 			s.tiles.Release()
 			return true
 		}
