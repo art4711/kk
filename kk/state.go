@@ -11,10 +11,14 @@ import (
 	"golang.org/x/mobile/event/lifecycle"
 	"golang.org/x/mobile/event/paint"
 	"golang.org/x/mobile/event/size"
-	"golang.org/x/mobile/exp/gl/glutil"
 	"golang.org/x/mobile/geom"
 	"golang.org/x/mobile/gl"
 )
+
+type butt struct {
+	b int
+	w *widget.Uniform
+}
 
 type State struct {
 	tiles Tiles
@@ -26,10 +30,9 @@ type State struct {
 	ful image.Point
 	tsz image.Point
 
-	buttons *widget.Uniform
+	buttons []butt
 
-	butImg *glutil.Image
-	t      theme.Theme
+	t theme.Theme
 }
 
 func New() *State {
@@ -79,40 +82,51 @@ func (s *State) setSize(e size.Event) {
 
 	horizontal := e.Orientation == size.OrientationLandscape || e.WidthPx > e.HeightPx
 
-	padPx := e.WidthPx / 50
+	padPx := float64(e.WidthPx / 50)
+	butPx := float64(e.WidthPx / 6)
 	bAx := widget.AxisHorizontal
 	aAx := widget.AxisVertical
 	if horizontal {
-		padPx = e.HeightPx / 50
+		padPx = float64(e.HeightPx / 50)
+		butPx = float64(e.HeightPx / 6)
 		bAx = widget.AxisVertical
 		aAx = widget.AxisHorizontal
 	}
 
-	// We abuse shiny widgets to do the layout for us (and also
-	// render the button bar for now).
-	s.buttons = widget.NewUniform(theme.Neutral,
-		widget.NewPadder(widget.AxisBoth, unit.Pixels(float64(padPx)),
+	// We abuse shiny widgets to do the layout for us.
+
+	s.buttons = []butt{{b: Save}, {b: Load}, {b: Reset}}
+
+	for i := range s.buttons {
+		s.buttons[i].w = widget.NewUniform(theme.Light, nil)
+	}
+
+	bb := widget.NewUniform(theme.Neutral,
+		widget.NewPadder(widget.AxisBoth, unit.Pixels(padPx),
 			widget.NewFlow(bAx,
-				widget.NewLabel("Foo"),
+				widget.NewSizer(unit.Pixels(butPx), unit.Pixels(butPx), s.buttons[0].w),
+				widget.NewSizer(unit.Pixels(butPx), unit.Pixels(butPx), s.buttons[1].w),
 				stretch(widget.NewSpace(), 1),
-				widget.NewLabel("Bar"),
+				widget.NewSizer(unit.Pixels(butPx), unit.Pixels(butPx), s.buttons[2].w),
 			),
 		),
 	)
 	// field
 	f := widget.NewUniform(theme.Light, nil)
+
 	all := widget.NewFlow(aAx,
-		stretch(s.buttons, 0),
-		stretch(widget.NewPadder(widget.AxisBoth, unit.Pixels(float64(padPx)), f), 1),
+		stretch(bb, 0),
+		stretch(widget.NewPadder(widget.AxisBoth, unit.Pixels(padPx), f), 1),
 	)
 	// do the layout.
 	all.Measure(&s.t, e.WidthPx, e.HeightPx)
 	all.Rect = image.Rectangle{Max: image.Pt(e.WidthPx, e.HeightPx)}
 	all.Layout(&s.t)
 
-	// square the field rectangle.
 	r := widgetScreenRect(&f.Embed)
 	dx, dy := r.Dx(), r.Dy()
+
+	// square the field rectangle.
 	if dx > dy {
 		r.Min.X += dx - dy
 	} else {
@@ -123,28 +137,20 @@ func (s *State) setSize(e size.Event) {
 	s.tsz.X = r.Dx() / s.f.W()
 	s.tsz.Y = r.Dy() / s.f.H()
 
-	s.tiles.SetSz(s.tsz)
-	if s.butImg != nil {
-		s.butImg.Release()
-		s.butImg = nil
-	}
+	br := widgetScreenRect(&s.buttons[0].w.Embed)
+	s.tiles.SetSz(s.tsz, br.Size())
 }
 
 func (s *State) drawButt() {
-	r := widgetScreenRect(&s.buttons.Embed)
-	if s.butImg == nil {
-		s.butImg = s.tiles.ims.NewImage(r.Dx(), r.Dy())
-		s.buttons.PaintBase(&node.PaintBaseContext{
-			Theme: &s.t,
-			Dst:   s.butImg.RGBA,
-		}, image.Point{})
-		s.butImg.Upload()
+	for i := range s.buttons {
+		r := widgetScreenRect(&s.buttons[i].w.Embed)
+		img := s.tiles.Get(s.buttons[i].b)
+		tl := r.Min
+		br := r.Max
+		tr := image.Pt(br.X, tl.Y)
+		bl := image.Pt(tl.X, br.Y)
+		img.Draw(s.wsz, s.ip2gp(tl), s.ip2gp(tr), s.ip2gp(bl), image.Rectangle{Max: r.Size()})
 	}
-	tl := r.Min
-	br := r.Max
-	tr := image.Pt(br.X, tl.Y)
-	bl := image.Pt(tl.X, br.Y)
-	s.butImg.Draw(s.wsz, s.ip2gp(tl), s.ip2gp(tr), s.ip2gp(bl), image.Rectangle{Max: r.Size()})
 }
 
 func (s *State) fRectBounds(x, y int) (geom.Point, geom.Point, geom.Point) {
@@ -185,8 +191,6 @@ func (s *State) Handle(ei interface{}, pub func()) bool {
 			s.tiles.SetCtx(s.glctx)
 		case lifecycle.CrossOff:
 			s.glctx = nil
-			s.butImg.Release()
-			s.butImg = nil
 			s.tiles.Release()
 			return true
 		}

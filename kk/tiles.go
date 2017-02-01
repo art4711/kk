@@ -18,26 +18,45 @@ import (
 type Tiles struct {
 	ims *glutil.Images
 	m   map[int]*glutil.Image
-	sz  image.Point
 
-	face font.Face
+	buttSz image.Point
+	sz     image.Point
+
+	face     font.Face
+	buttFace font.Face
 }
+
+const (
+	Save  = -10
+	Load  = -11
+	Reset = -12
+)
 
 func (t *Tiles) SetCtx(ctx gl.Context) {
 	t.Release()
 	t.ims = glutil.NewImages(ctx)
 }
 
-func (t *Tiles) SetSz(sz image.Point) {
-	if t.sz != sz {
+var fnt *truetype.Font
+
+func init() {
+	f, err := truetype.Parse(gobold.TTF)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fnt = f
+}
+
+func (t *Tiles) SetSz(sz, buttSz image.Point) {
+	if t.sz != sz || t.buttSz != buttSz {
 		t.drop()
 		t.sz = sz
-		f, err := truetype.Parse(gobold.TTF)
-		if err != nil {
-			log.Fatal(err)
-		}
-		t.face = truetype.NewFace(f, &truetype.Options{
+		t.buttSz = buttSz
+		t.face = truetype.NewFace(fnt, &truetype.Options{
 			Size: float64((sz.X + sz.Y) / 8),
+		})
+		t.buttFace = truetype.NewFace(fnt, &truetype.Options{
+			Size: float64(buttSz.X / 2),
 		})
 	}
 }
@@ -59,9 +78,39 @@ func (t *Tiles) drop() {
 
 func (t *Tiles) Get(n int) *glutil.Image {
 	if t.m[n] == nil {
-		t.m[n] = t.genTex(n)
+		if n < 0 {
+			t.m[n] = t.genButt(n)
+		} else {
+			t.m[n] = t.genTex(n)
+		}
 	}
 	return t.m[n]
+}
+
+func (t *Tiles) genButt(n int) *glutil.Image {
+	img := t.ims.NewImage(t.buttSz.X, t.buttSz.Y)
+	s := "X"
+	switch n {
+	case Save:
+		s = "S"
+	case Load:
+		s = "L"
+	case Reset:
+		s = "R"
+	}
+	dot := fixed.P(t.buttSz.X/2, t.buttSz.Y/2)
+	dot.Y += t.buttFace.Metrics().Ascent / 2
+	dot.X -= font.MeasureString(t.buttFace, s) / 2
+	d := font.Drawer{
+		Dst:  img.RGBA,
+		Src:  image.Black,
+		Face: t.buttFace,
+		Dot:  dot,
+	}
+	d.DrawString(s)
+	img.Upload()
+
+	return img
 }
 
 var pal = [...][3]float32{
