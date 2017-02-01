@@ -29,10 +29,6 @@ func keyFilter(ei interface{}) interface{} {
 	return ei
 }
 
-func filters(ei interface{}) interface{} {
-	return keyFilter(ei)
-}
-
 func main() {
 	gldriver.Main(func(s screen.Screen) {
 		st := kk.New()
@@ -41,7 +37,7 @@ func main() {
 			log.Fatal(err)
 		}
 		defer w.Release()
-		for st.Handle(filters(w.NextEvent()), func() { w.Publish() }) {
+		for st.Handle(st.EvFilter(keyFilter(w.NextEvent())), func() { w.Publish() }) {
 		}
 	})
 }

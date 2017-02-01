@@ -3,14 +3,17 @@ package kk
 import (
 	"image"
 	"log"
+	"math"
 
 	"golang.org/x/exp/shiny/unit"
 	"golang.org/x/exp/shiny/widget"
 	"golang.org/x/exp/shiny/widget/node"
 	"golang.org/x/exp/shiny/widget/theme"
 	"golang.org/x/mobile/event/lifecycle"
+	"golang.org/x/mobile/event/mouse"
 	"golang.org/x/mobile/event/paint"
 	"golang.org/x/mobile/event/size"
+	"golang.org/x/mobile/event/touch"
 	"golang.org/x/mobile/geom"
 	"golang.org/x/mobile/gl"
 )
@@ -18,6 +21,7 @@ import (
 type butt struct {
 	b int
 	w *widget.Uniform
+	r image.Rectangle
 }
 
 type State struct {
@@ -29,16 +33,108 @@ type State struct {
 
 	ful image.Point
 	tsz image.Point
+	fr  image.Rectangle
 
 	buttons []butt
 
 	t theme.Theme
+
+	touchStart image.Point
 }
 
 func New() *State {
 	s := &State{}
 	s.f.Init()
 	return s
+}
+
+func (s *State) Handle(ei interface{}, pub func()) bool {
+	switch e := ei.(type) {
+	case lifecycle.Event:
+		if e.To == lifecycle.StageDead {
+			return false
+		}
+		switch e.Crosses(lifecycle.StageVisible) {
+		case lifecycle.CrossOn:
+			s.glctx, _ = e.DrawContext.(gl.Context)
+			s.tiles.SetCtx(s.glctx)
+		case lifecycle.CrossOff:
+			s.glctx = nil
+			s.tiles.Release()
+			return true
+		}
+	case EvR:
+		s.f.Right()
+	case EvL:
+		s.f.Left()
+	case EvU:
+		s.f.Up()
+	case EvD:
+		s.f.Down()
+	case EvQ:
+		return false
+	case paint.Event:
+	case size.Event:
+		s.setSize(e)
+	case error:
+		log.Print(e)
+		return true
+	default:
+		return true
+	}
+	s.draw(pub)
+	return true
+}
+
+func (s *State) clickOrTouch(ps, pe image.Point) interface{} {
+	switch {
+	case ps.In(s.fr):
+		dp := pe.Sub(ps)
+		if math.Abs(float64(dp.X)) > math.Abs(float64(dp.Y)) {
+			if dp.X < 0 {
+				return EvL{}
+			} else {
+				return EvR{}
+			}
+		} else {
+			if dp.Y < 0 {
+				return EvU{}
+			} else {
+				return EvD{}
+			}
+		}
+	case ps.In(s.buttons[0].r):
+	case ps.In(s.buttons[1].r):
+	case ps.In(s.buttons[2].r):
+		return EvQ{}
+	}
+	return nil
+}
+
+func (s *State) EvFilter(ei interface{}) interface{} {
+	if e, ok := ei.(touch.Event); ok {
+		switch e.Type {
+		case touch.TypeBegin:
+			s.touchStart = image.Pt(int(e.X), int(e.Y))
+		case touch.TypeEnd:
+			ne := s.clickOrTouch(s.touchStart, image.Pt(int(e.X), int(e.Y)))
+			if ne != nil {
+				return ne
+			}
+		}
+	}
+	if e, ok := ei.(mouse.Event); ok && e.Button == mouse.ButtonLeft {
+		switch e.Direction {
+		case mouse.DirPress:
+			s.touchStart = image.Pt(int(e.X), int(e.Y))
+		case mouse.DirRelease:
+			ne := s.clickOrTouch(s.touchStart, image.Pt(int(e.X), int(e.Y)))
+			if ne != nil {
+				return ne
+			}
+		}
+	}
+	return ei
 }
 
 type EvL struct{}
@@ -58,14 +154,6 @@ func stretch(n node.Node, alongWeight int) node.Node {
 	})
 }
 
-// helper to translate image points to geom points for glutil.Images.
-func (s *State) ip2gp(ip image.Point) geom.Point {
-	return geom.Point{
-		X: geom.Pt(ip.X) / geom.Pt(s.wsz.PixelsPerPt),
-		Y: geom.Pt(ip.Y) / geom.Pt(s.wsz.PixelsPerPt),
-	}
-}
-
 // helper to extract screen coords for a widget.
 func widgetScreenRect(e *node.Embed) image.Rectangle {
 	r := e.Rect
@@ -74,6 +162,14 @@ func widgetScreenRect(e *node.Embed) image.Rectangle {
 		r = r.Add(e.Rect.Min)
 	}
 	return r
+}
+
+// helper to translate image points to geom points for glutil.Images.
+func (s *State) ip2gp(ip image.Point) geom.Point {
+	return geom.Point{
+		X: geom.Pt(ip.X) / geom.Pt(s.wsz.PixelsPerPt),
+		Y: geom.Pt(ip.Y) / geom.Pt(s.wsz.PixelsPerPt),
+	}
 }
 
 func (s *State) setSize(e size.Event) {
@@ -133,12 +229,17 @@ func (s *State) setSize(e size.Event) {
 		r.Min.Y += dy - dx
 	}
 
+	s.fr = r
+
 	s.ful = r.Min
 	s.tsz.X = r.Dx() / s.f.W()
 	s.tsz.Y = r.Dy() / s.f.H()
 
-	br := widgetScreenRect(&s.buttons[0].w.Embed)
-	s.tiles.SetSz(s.tsz, br.Size())
+	for i := range s.buttons {
+		s.buttons[i].r = widgetScreenRect(&s.buttons[i].w.Embed)
+	}
+
+	s.tiles.SetSz(s.tsz, s.buttons[0].r.Size())
 }
 
 func (s *State) drawButt() {
@@ -177,40 +278,4 @@ func (s *State) draw(pub func()) {
 		}
 	}
 	pub()
-}
-
-func (s *State) Handle(ei interface{}, pub func()) bool {
-	switch e := ei.(type) {
-	case lifecycle.Event:
-		if e.To == lifecycle.StageDead {
-			return false
-		}
-		switch e.Crosses(lifecycle.StageVisible) {
-		case lifecycle.CrossOn:
-			s.glctx, _ = e.DrawContext.(gl.Context)
-			s.tiles.SetCtx(s.glctx)
-		case lifecycle.CrossOff:
-			s.glctx = nil
-			s.tiles.Release()
-			return true
-		}
-	case EvR:
-		s.f.Right()
-	case EvL:
-		s.f.Left()
-	case EvU:
-		s.f.Up()
-	case EvD:
-		s.f.Down()
-	case EvQ:
-		return false
-	case paint.Event:
-	case size.Event:
-		s.setSize(e)
-	case error:
-		log.Print(e)
-		return true
-	}
-	s.draw(pub)
-	return true
 }
