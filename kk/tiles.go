@@ -88,7 +88,7 @@ func (t *Tiles) Get(n int) *glutil.Image {
 }
 
 func (t *Tiles) genButt(n int) *glutil.Image {
-	img := t.ims.NewImage(t.buttSz.X, t.buttSz.Y)
+	tile := t.ims.NewImage(t.buttSz.X, t.buttSz.Y)
 	s := "X"
 	switch n {
 	case Save:
@@ -98,19 +98,28 @@ func (t *Tiles) genButt(n int) *glutil.Image {
 	case Reset:
 		s = "R"
 	}
+
+	img := tile.RGBA
+	r := img.Bounds()
+	draw.Draw(img, image.Rect(r.Min.X+2, r.Min.Y+2, r.Max.X-2, r.Min.Y+4), image.Black, image.Point{}, draw.Src)
+	draw.Draw(img, image.Rect(r.Min.X+2, r.Min.Y+2, r.Min.X+4, r.Max.Y-2), image.Black, image.Point{}, draw.Src)
+
+	draw.Draw(img, image.Rect(r.Max.X-4, r.Min.Y+2, r.Max.X-2, r.Max.Y-2), image.Black, image.Point{}, draw.Src)
+	draw.Draw(img, image.Rect(r.Min.X+2, r.Max.Y-4, r.Max.X-2, r.Max.Y-2), image.Black, image.Point{}, draw.Src)
+
 	dot := fixed.P(t.buttSz.X/2, t.buttSz.Y/2)
-	dot.Y += t.buttFace.Metrics().Ascent / 2
+	dot.Y += t.buttFace.Metrics().Ascent / 3
 	dot.X -= font.MeasureString(t.buttFace, s) / 2
 	d := font.Drawer{
-		Dst:  img.RGBA,
+		Dst:  img,
 		Src:  image.Black,
 		Face: t.buttFace,
 		Dot:  dot,
 	}
 	d.DrawString(s)
-	img.Upload()
+	tile.Upload()
 
-	return img
+	return tile
 }
 
 var pal = [...][3]float32{
@@ -144,7 +153,7 @@ func (t *Tiles) genTex(n int) *glutil.Image {
 		s := fmt.Sprintf("%d", 1<<uint(n))
 
 		dot := fixed.P(t.sz.X/2, t.sz.Y/2)
-		dot.Y += t.face.Metrics().Ascent / 2
+		dot.Y += t.face.Metrics().Ascent / 3
 		dot.X -= font.MeasureString(t.face, s) / 2
 		d := font.Drawer{
 			Dst:  im,
