@@ -33,6 +33,7 @@ type State struct {
 	fr  image.Rectangle
 
 	buttons map[string]*butt
+	scores  [8]image.Rectangle
 
 	touchStart image.Point
 }
@@ -174,6 +175,14 @@ func (s *State) fRectBounds(x, y int) (geom.Point, geom.Point, geom.Point) {
 		s.ip2gp(image.Pt(s.ful.X+s.tsz.X*x, s.ful.Y+s.tsz.Y*(y+1)))
 }
 
+func (s *State) rect2gps(r image.Rectangle) (geom.Point, geom.Point, geom.Point) {
+	tl := r.Min
+	br := r.Max
+	tr := image.Pt(br.X, tl.Y)
+	bl := image.Pt(tl.X, br.Y)
+	return s.ip2gp(tl), s.ip2gp(tr), s.ip2gp(bl)
+}
+
 func (s *State) draw(pub func()) {
 	if s.glctx == nil || s.ful.X == 0 {
 		return
@@ -185,11 +194,16 @@ func (s *State) draw(pub func()) {
 	for i := range s.buttons {
 		r := s.buttons[i].r
 		img := s.tiles.Get(s.buttons[i].b)
-		tl := r.Min
-		br := r.Max
-		tr := image.Pt(br.X, tl.Y)
-		bl := image.Pt(tl.X, br.Y)
-		img.Draw(s.wsz, s.ip2gp(tl), s.ip2gp(tr), s.ip2gp(bl), image.Rectangle{Max: r.Size()})
+		tl, tr, bl := s.rect2gps(r)
+		img.Draw(s.wsz, tl, tr, bl, image.Rectangle{Max: r.Size()})
+	}
+
+	// Draw score.
+	for i := range s.scores {
+		r := s.scores[i]
+		img := s.tiles.Get(ST(i))
+		tl, tr, bl := s.rect2gps(r)
+		img.Draw(s.wsz, tl, tr, bl, image.Rectangle{Max: r.Size()})
 	}
 
 	// Draw the field.

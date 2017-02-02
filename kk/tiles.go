@@ -26,11 +26,13 @@ type Tiles struct {
 	ims *glutil.Images
 	m   map[T]*glutil.Image
 
-	buttSz image.Point
-	sz     image.Point
+	buttSz  image.Point
+	sz      image.Point
+	scoreSz image.Point
 
-	face     font.Face
-	buttFace font.Face
+	face      font.Face
+	buttFace  font.Face
+	scoreFace font.Face
 }
 
 type T interface {
@@ -52,16 +54,24 @@ func init() {
 	fnt = f
 }
 
-func (t *Tiles) SetSz(sz, buttSz image.Point) {
-	if t.sz != sz || t.buttSz != buttSz {
+func (t *Tiles) SetSz(sz, buttSz image.Point, scoreSz image.Point) {
+	if t.sz != sz || t.buttSz != buttSz || t.scoreSz != scoreSz {
 		t.drop()
 		t.sz = sz
 		t.buttSz = buttSz
+		t.scoreSz = scoreSz
 		t.face = truetype.NewFace(fnt, &truetype.Options{
 			Size: float64((sz.X + sz.Y) / 8),
 		})
 		t.buttFace = truetype.NewFace(fnt, &truetype.Options{
 			Size: float64(buttSz.X / 4),
+		})
+		ss := float64(scoreSz.X) * 1.75 // XXX - Why?
+		if scoreSz.X > scoreSz.Y {
+			ss = float64(scoreSz.Y)
+		}
+		t.scoreFace = truetype.NewFace(fnt, &truetype.Options{
+			Size: ss,
 		})
 	}
 }
@@ -183,4 +193,28 @@ func (n FT) Gen(t *Tiles) *glutil.Image {
 	}
 	img.Upload()
 	return img
+}
+
+type ST int
+
+func (n ST) Gen(t *Tiles) *glutil.Image {
+	tile := t.ims.NewImage(t.scoreSz.X, t.scoreSz.Y)
+
+	s := fmt.Sprint(n)
+
+	img := tile.RGBA
+
+	dot := fixed.P(t.scoreSz.X/2, t.scoreSz.Y/2)
+	dot.Y += t.scoreFace.Metrics().Ascent / 3
+	dot.X -= font.MeasureString(t.scoreFace, s) / 2
+	d := font.Drawer{
+		Dst:  img,
+		Src:  image.Black,
+		Face: t.scoreFace,
+		Dot:  dot,
+	}
+	d.DrawString(s)
+	tile.Upload()
+
+	return tile
 }

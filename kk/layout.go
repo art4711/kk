@@ -73,23 +73,26 @@ func (s *State) setSize(e size.Event) {
 
 	// We abuse shiny widgets to do the layout for us.
 
-	bw := make(map[string]*widget.Uniform)
+	bw := make(map[string]node.Node)
 	for i := range s.buttons {
-		bw[i] = widget.NewUniform(theme.Light, nil)
+		bw[i] = widget.NewSpace()
 	}
-
-	bb := widget.NewUniform(theme.Neutral,
-		widget.NewPadder(widget.AxisBoth, unit.Pixels(padPx),
-			widget.NewFlow(bAx,
-				widget.NewSizer(unit.Pixels(butPx), unit.Pixels(butPx), bw["save"]),
-				widget.NewSizer(unit.Pixels(butPx), unit.Pixels(butPx), bw["load"]),
-				stretch(widget.NewSpace(), 1),
-				widget.NewSizer(unit.Pixels(butPx), unit.Pixels(butPx), bw["reset"]),
-			),
+	scores := make([]node.Node, len(s.scores))
+	for i := range scores {
+		scores[i] = stretch(widget.NewSpace(), 1)
+	}
+	bb := widget.NewPadder(widget.AxisBoth, unit.Pixels(padPx),
+		widget.NewFlow(bAx,
+			widget.NewSizer(unit.Pixels(butPx), unit.Pixels(butPx), bw["save"]),
+			widget.NewSizer(unit.Pixels(butPx), unit.Pixels(butPx), bw["load"]),
+			stretch(widget.NewSpace(), 1),
+			stretch(widget.NewFlow(bAx, scores...), 1),
+			stretch(widget.NewSpace(), 1),
+			widget.NewSizer(unit.Pixels(butPx), unit.Pixels(butPx), bw["reset"]),
 		),
 	)
 	// field
-	f := widget.NewUniform(theme.Light, nil)
+	f := widget.NewSpace()
 
 	var all node.Node
 
@@ -124,6 +127,9 @@ func (s *State) setSize(e size.Event) {
 	for i := range bw {
 		s.buttons[i].r = widgetScreenRect(bw[i])
 	}
+	for i := range scores {
+		s.scores[i] = widgetScreenRect(scores[i])
+	}
 
-	s.tiles.SetSz(s.tsz, s.buttons["save"].r.Size())
+	s.tiles.SetSz(s.tsz, s.buttons["save"].r.Size(), s.scores[0].Size())
 }
