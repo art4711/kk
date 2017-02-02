@@ -2,6 +2,7 @@ package kk
 
 import (
 	"image"
+	"runtime"
 
 	"golang.org/x/exp/shiny/unit"
 	"golang.org/x/exp/shiny/widget"
@@ -23,7 +24,8 @@ func stretch(n node.Node, alongWeight int) node.Node {
 }
 
 // helper to extract screen coords for a widget.
-func widgetScreenRect(e *node.Embed) image.Rectangle {
+func widgetScreenRect(n node.Node) image.Rectangle {
+	e := n.Wrappee()
 	r := e.Rect
 	for e.Parent != nil {
 		e = e.Parent
@@ -83,16 +85,21 @@ func (s *State) setSize(e size.Event) {
 	// field
 	f := widget.NewUniform(theme.Light, nil)
 
-	all := widget.NewFlow(aAx,
+	var all node.Node
+
+	all = widget.NewFlow(aAx,
 		stretch(bb, 0),
 		stretch(widget.NewPadder(widget.AxisBoth, unit.Pixels(padPx), f), 1),
 	)
+	if runtime.GOOS == "android" {
+		all = widget.NewPadder(widget.AxisVertical, unit.Points(10), all)
+	}
 	// do the layout.
 	all.Measure(&t, e.WidthPx, e.HeightPx)
-	all.Rect = image.Rectangle{Max: image.Pt(e.WidthPx, e.HeightPx)}
+	all.Wrappee().Rect = image.Rectangle{Max: image.Pt(e.WidthPx, e.HeightPx)}
 	all.Layout(&t)
 
-	r := widgetScreenRect(&f.Embed)
+	r := widgetScreenRect(f)
 	dx, dy := r.Dx(), r.Dy()
 
 	// square the field rectangle.
@@ -109,7 +116,7 @@ func (s *State) setSize(e size.Event) {
 	s.tsz.Y = r.Dy() / s.f.H()
 
 	for i := range s.buttons {
-		s.buttons[i].r = widgetScreenRect(&bw[i].Embed)
+		s.buttons[i].r = widgetScreenRect(bw[i])
 	}
 
 	s.tiles.SetSz(s.tsz, s.buttons[0].r.Size())
