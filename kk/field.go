@@ -6,7 +6,8 @@ const width = 4
 const height = 4
 
 type Field struct {
-	f [height][width]int
+	f     [height][width]int
+	score int
 }
 
 func (f *Field) Init() {
@@ -27,9 +28,10 @@ func (f *Field) r() {
 }
 
 func (f *Field) set(n Field) {
-	add := n != *f
-	*f = n
+	add := n.f != f.f
+	f.f = n.f
 	if add {
+		f.score += n.score
 		f.r()
 	}
 }
@@ -40,6 +42,11 @@ func (f *Field) W() int {
 
 func (f *Field) H() int {
 	return height
+}
+
+func (f *Field) merged(y, x, val int) {
+	f.f[y][x] = val + 1
+	f.score += val
 }
 
 func (f *Field) Left() {
@@ -53,7 +60,7 @@ func (f *Field) Left() {
 				continue
 			}
 			if last == v {
-				n.f[y][c] = last + 1
+				n.merged(y, c, last)
 				c++
 				last = 0
 			} else {
@@ -82,7 +89,7 @@ func (f *Field) Right() {
 				continue
 			}
 			if last == v {
-				n.f[y][c] = last + 1
+				n.merged(y, c, last)
 				c--
 				last = 0
 			} else {
@@ -111,7 +118,7 @@ func (f *Field) Up() {
 				continue
 			}
 			if last == v {
-				n.f[r][x] = last + 1
+				n.merged(r, x, last)
 				r++
 				last = 0
 			} else {
@@ -140,7 +147,7 @@ func (f *Field) Down() {
 				continue
 			}
 			if last == v {
-				n.f[r][x] = last + 1
+				n.merged(r, x, last)
 				r--
 				last = 0
 			} else {
