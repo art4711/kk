@@ -210,7 +210,7 @@ func (s *State) draw(pub func()) {
 	w, h := s.f.W(), s.f.H()
 	for y := 0; y < h; y++ {
 		for x := 0; x < w; x++ {
-			t := s.tiles.Get(FT(s.f[y][x]))
+			t := s.tiles.Get(FT(s.f.f[y][x]))
 			tl, tr, bl := s.fRectBounds(x, y)
 			t.Draw(s.wsz, tl, tr, bl, image.Rectangle{Max: s.tsz})
 		}

@@ -5,14 +5,12 @@ import "math/rand"
 const width = 4
 const height = 4
 
-type Field [height][width]int
+type Field struct {
+	f [height][width]int
+}
 
 func (f *Field) Init() {
-	for x := range *f {
-		for y := range (*f)[x] {
-			(*f)[x][y] = 0
-		}
-	}
+	*f = Field{}
 	f.r()
 	f.r()
 }
@@ -21,8 +19,8 @@ func (f *Field) r() {
 	for {
 		i := rand.Intn(height * width)
 		c, r := i/width, i%width
-		if f[c][r] == 0 {
-			f[c][r] = 1
+		if f.f[c][r] == 0 {
+			f.f[c][r] = 1
 			break
 		}
 	}
@@ -50,24 +48,24 @@ func (f *Field) Left() {
 		last := 0
 		c := 0
 		for x := 0; x < width; x++ {
-			v := (*f)[y][x]
+			v := f.f[y][x]
 			if v == 0 {
 				continue
 			}
 			if last == v {
-				n[y][c] = last + 1
+				n.f[y][c] = last + 1
 				c++
 				last = 0
 			} else {
 				if last != 0 {
-					n[y][c] = last
+					n.f[y][c] = last
 					c++
 				}
 				last = v
 			}
 		}
 		if last != 0 {
-			n[y][c] = last
+			n.f[y][c] = last
 		}
 	}
 	f.set(n)
@@ -79,24 +77,24 @@ func (f *Field) Right() {
 		last := 0
 		c := width - 1
 		for x := width - 1; x >= 0; x-- {
-			v := (*f)[y][x]
+			v := f.f[y][x]
 			if v == 0 {
 				continue
 			}
 			if last == v {
-				n[y][c] = last + 1
+				n.f[y][c] = last + 1
 				c--
 				last = 0
 			} else {
 				if last != 0 {
-					n[y][c] = last
+					n.f[y][c] = last
 					c--
 				}
 				last = v
 			}
 		}
 		if last != 0 {
-			n[y][c] = last
+			n.f[y][c] = last
 		}
 	}
 	f.set(n)
@@ -108,24 +106,24 @@ func (f *Field) Up() {
 		last := 0
 		r := 0
 		for y := 0; y < height; y++ {
-			v := (*f)[y][x]
+			v := f.f[y][x]
 			if v == 0 {
 				continue
 			}
 			if last == v {
-				n[r][x] = last + 1
+				n.f[r][x] = last + 1
 				r++
 				last = 0
 			} else {
 				if last != 0 {
-					n[r][x] = last
+					n.f[r][x] = last
 					r++
 				}
 				last = v
 			}
 		}
 		if last != 0 {
-			n[r][x] = last
+			n.f[r][x] = last
 		}
 	}
 	f.set(n)
@@ -137,24 +135,24 @@ func (f *Field) Down() {
 		last := 0
 		r := height - 1
 		for y := height - 1; y >= 0; y-- {
-			v := (*f)[y][x]
+			v := f.f[y][x]
 			if v == 0 {
 				continue
 			}
 			if last == v {
-				n[r][x] = last + 1
+				n.f[r][x] = last + 1
 				r--
 				last = 0
 			} else {
 				if last != 0 {
-					n[r][x] = last
+					n.f[r][x] = last
 					r--
 				}
 				last = v
 			}
 		}
 		if last != 0 {
-			n[r][x] = last
+			n.f[r][x] = last
 		}
 	}
 	f.set(n)
