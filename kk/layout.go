@@ -100,6 +100,12 @@ func (s *State) setSize(e size.Event) {
 		stretch(bb, 0),
 		stretch(widget.NewPadder(widget.AxisBoth, unit.Pixels(padPx), f), 1),
 	)
+	// Android tells us to use the whole screen, but the upper
+	// part of it is covered by the system, so we need to get out
+	// of the way of that.  The 10pt here is completely pulled out
+	// of my ass. I have no idea what the actual measure is and
+	// how to find what it is or how to disable it, the best I can
+	// achieve is "It Works For Me".
 	if runtime.GOOS == "android" {
 		all = widget.NewPadder(widget.AxisVertical, unit.Points(10), all)
 	}
