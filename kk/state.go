@@ -162,18 +162,6 @@ type EvReset struct{}
 type EvLoad struct{}
 type EvSave struct{}
 
-func (s *State) drawButt() {
-	for i := range s.buttons {
-		r := s.buttons[i].r
-		img := s.tiles.Get(s.buttons[i].b)
-		tl := r.Min
-		br := r.Max
-		tr := image.Pt(br.X, tl.Y)
-		bl := image.Pt(tl.X, br.Y)
-		img.Draw(s.wsz, s.ip2gp(tl), s.ip2gp(tr), s.ip2gp(bl), image.Rectangle{Max: r.Size()})
-	}
-}
-
 func (s *State) fRectBounds(x, y int) (geom.Point, geom.Point, geom.Point) {
 	return s.ip2gp(image.Pt(s.ful.X+s.tsz.X*x, s.ful.Y+s.tsz.Y*y)),
 		s.ip2gp(image.Pt(s.ful.X+s.tsz.X*(x+1), s.ful.Y+s.tsz.Y*y)),
@@ -187,8 +175,18 @@ func (s *State) draw(pub func()) {
 	s.glctx.ClearColor(1, 1, 1, 1)
 	s.glctx.Clear(gl.COLOR_BUFFER_BIT)
 
-	s.drawButt()
+	// Draw the buttons.
+	for i := range s.buttons {
+		r := s.buttons[i].r
+		img := s.tiles.Get(s.buttons[i].b)
+		tl := r.Min
+		br := r.Max
+		tr := image.Pt(br.X, tl.Y)
+		bl := image.Pt(tl.X, br.Y)
+		img.Draw(s.wsz, s.ip2gp(tl), s.ip2gp(tr), s.ip2gp(bl), image.Rectangle{Max: r.Size()})
+	}
 
+	// Draw the field.
 	w, h := s.f.W(), s.f.H()
 	for y := 0; y < h; y++ {
 		for x := 0; x < w; x++ {
