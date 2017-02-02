@@ -61,18 +61,18 @@ func (s *State) setSize(e size.Event) {
 
 	// We abuse shiny widgets to do the layout for us.
 
-	bw := make([]*widget.Uniform, len(s.buttons))
-	for i := range bw {
+	bw := make(map[string]*widget.Uniform)
+	for i := range s.buttons {
 		bw[i] = widget.NewUniform(theme.Light, nil)
 	}
 
 	bb := widget.NewUniform(theme.Neutral,
 		widget.NewPadder(widget.AxisBoth, unit.Pixels(padPx),
 			widget.NewFlow(bAx,
-				widget.NewSizer(unit.Pixels(butPx), unit.Pixels(butPx), bw[0]),
-				widget.NewSizer(unit.Pixels(butPx), unit.Pixels(butPx), bw[1]),
+				widget.NewSizer(unit.Pixels(butPx), unit.Pixels(butPx), bw["save"]),
+				widget.NewSizer(unit.Pixels(butPx), unit.Pixels(butPx), bw["load"]),
 				stretch(widget.NewSpace(), 1),
-				widget.NewSizer(unit.Pixels(butPx), unit.Pixels(butPx), bw[2]),
+				widget.NewSizer(unit.Pixels(butPx), unit.Pixels(butPx), bw["reset"]),
 			),
 		),
 	)
@@ -109,9 +109,9 @@ func (s *State) setSize(e size.Event) {
 	s.tsz.X = r.Dx() / s.f.W()
 	s.tsz.Y = r.Dy() / s.f.H()
 
-	for i := range s.buttons {
+	for i := range bw {
 		s.buttons[i].r = widgetScreenRect(bw[i])
 	}
 
-	s.tiles.SetSz(s.tsz, s.buttons[0].r.Size())
+	s.tiles.SetSz(s.tsz, s.buttons["save"].r.Size())
 }

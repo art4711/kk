@@ -32,7 +32,7 @@ type State struct {
 	tsz image.Point
 	fr  image.Rectangle
 
-	buttons []butt
+	buttons map[string]*butt
 
 	touchStart image.Point
 }
@@ -40,11 +40,10 @@ type State struct {
 func New() *State {
 	s := &State{}
 	s.f.Init()
-	s.buttons = []butt{
-		{b: Butt{Label: "Save"}},
-		{b: Butt{Label: "Load", Fade: true}},
-		{b: Butt{Label: "Reset"}},
-	}
+	s.buttons = make(map[string]*butt)
+	s.buttons["save"] = &butt{b: Butt{Label: "Save"}}
+	s.buttons["load"] = &butt{b: Butt{Label: "Load", Fade: true}}
+	s.buttons["reset"] = &butt{b: Butt{Label: "Reset"}}
 	return s
 }
 
@@ -77,7 +76,7 @@ func (s *State) Handle(ei interface{}, pub func()) bool {
 		s.f.Init()
 	case EvSave:
 		f := s.f
-		s.buttons[1].b.Fade = false // XXX - 1
+		s.buttons["load"].b.Fade = false
 		s.saved = &f
 	case EvLoad:
 		if s.saved != nil {
@@ -124,14 +123,14 @@ func (s *State) clickOrTouch(start bool, p image.Point) interface{} {
 				return EvD{}
 			}
 		}
-	case ps.In(s.buttons[0].r):
-		s.buttons[0].b.Invert = false
+	case ps.In(s.buttons["save"].r):
+		s.buttons["save"].b.Invert = false
 		return EvSave{}
-	case ps.In(s.buttons[1].r):
-		s.buttons[1].b.Invert = false
+	case ps.In(s.buttons["load"].r):
+		s.buttons["load"].b.Invert = false
 		return EvLoad{}
-	case ps.In(s.buttons[2].r):
-		s.buttons[2].b.Invert = false
+	case ps.In(s.buttons["reset"].r):
+		s.buttons["reset"].b.Invert = false
 		return EvReset{}
 	}
 	return nil
