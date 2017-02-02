@@ -4,7 +4,7 @@ Experiment to see how hard it is to implement something for gomobile.
 This is pretty much a clone of the game 2048, except that I probably
 don't count score the same way and there's a save and load button.
 
-Called `kk` because that's... two k... 2k... 2048... Get it? Anyway.
+Called `kk` because... two k... 2k... 2048... Get it? Anyway.
 
 ## Run ##
 
@@ -43,6 +43,10 @@ found any way that was exposed to the user).
 
 ## TODO ##
 
+Use unpredictable for randomness? I refuse to use the normal monkey
+methods to seed a terrible RNG so right now the randomness is entirely
+unseeded and generates the exact same game every time.
+
 Get rid of glutil.Image. It's three layers of indirection and unit
 obfuscation for something that will be shorter to just layout
 ourselves without all this complexity of weird units. Besides, we'll
@@ -61,3 +65,8 @@ Better font for the score.
 
 Acquire taste before ever picking colors for anything ever. Especially
 the game over color is eye-watering.
+
+Save save state to something permanent. Gomobile doesn't provide an
+abstraction for any permanent storage and I don't think it's worth it
+to write specific Android code to plug into storage just to stuff a
+handful of bytes somewhere.
