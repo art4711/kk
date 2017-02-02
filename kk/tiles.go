@@ -152,7 +152,8 @@ func (n FT) Gen(t *Tiles) *glutil.Image {
 	im := img.RGBA
 	ul := t.sz.Div(20)
 	lr := t.sz.Sub(ul)
-	draw.Draw(im, im.Bounds(), image.NewUniform(color.RGBA{236, 236, 236, 255}), image.Point{}, draw.Src)
+	borderColor := image.NewUniform(color.RGBA{255, 255, 255, 204})
+	draw.Draw(im, im.Bounds(), borderColor, image.Point{}, draw.Src)
 	draw.Draw(im, image.Rectangle{ul, lr}, ic, image.Point{}, draw.Src)
 
 	if n > 0 {

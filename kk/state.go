@@ -172,7 +172,7 @@ func (s *State) draw(pub func()) {
 	if s.glctx == nil || s.ful.X == 0 {
 		return
 	}
-	s.glctx.ClearColor(1, 1, 1, 1)
+	s.glctx.ClearColor(0.95, 0.97, 1, 1)
 	s.glctx.Clear(gl.COLOR_BUFFER_BIT)
 
 	// Draw the buttons.
