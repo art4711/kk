@@ -154,20 +154,23 @@ var pal = [...][3]float32{
 	{1.0, 0.0, 0.0},
 }
 
-type FT int
+type FT struct {
+	n    int
+	over bool
+}
 
-func (n FT) Gen(t *Tiles) *glutil.Image {
+func (ft FT) Gen(t *Tiles) *glutil.Image {
 	img := t.ims.NewImage(t.sz.X, t.sz.Y)
 
-	p := n / 6
-	d2 := float32(n%6) / 6.0
+	p := ft.n / 6
+	d2 := float32(ft.n%6) / 6.0
 	d1 := 1.0 - d2
 	ic := image.NewUniform(color.RGBA{
 		uint8((pal[p][0]*d1 + pal[p+1][0]*d2) * 255),
 		uint8((pal[p][1]*d1 + pal[p+1][1]*d2) * 255),
 		uint8((pal[p][2]*d1 + pal[p+1][2]*d2) * 255),
 		255})
-	if n == 0 {
+	if ft.n == 0 {
 		ic = image.NewUniform(color.RGBA{204, 204, 204, 255})
 	}
 	im := img.RGBA
@@ -177,17 +180,21 @@ func (n FT) Gen(t *Tiles) *glutil.Image {
 	draw.Draw(im, im.Bounds(), borderColor, image.Point{}, draw.Src)
 	draw.Draw(im, image.Rectangle{ul, lr}, ic, image.Point{}, draw.Src)
 
-	if n > 0 {
-		s := fmt.Sprintf("%d", 1<<uint(n))
+	if ft.n > 0 {
+		s := fmt.Sprintf("%d", 1<<uint(ft.n))
 
 		dot := fixed.P(t.sz.X/2, t.sz.Y/2)
 		dot.Y += t.face.Metrics().Ascent / 3
 		dot.X -= font.MeasureString(t.face, s) / 2
 		d := font.Drawer{
 			Dst:  im,
-			Src:  image.Black,
 			Face: t.face,
 			Dot:  dot,
+		}
+		if ft.over {
+			d.Src = image.NewUniform(color.RGBA{255, 0, 0, 255})
+		} else {
+			d.Src = image.Black
 		}
 		d.DrawString(s)
 	}

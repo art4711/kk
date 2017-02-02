@@ -16,7 +16,39 @@ func (f *Field) Init() {
 	f.r()
 }
 
+func (f *Field) GameOver() bool {
+	for y := 0; y < height; y++ {
+		for x := 0; x < width-1; x++ {
+			if f.f[y][x] == 0 || f.f[y][x] == f.f[y][x+1] {
+				return false
+			}
+		}
+	}
+	for y := 0; y < height-1; y++ {
+		for x := 0; x < width; x++ {
+			if f.f[y][x] == 0 || f.f[y][x] == f.f[y+1][x] {
+				return false
+			}
+		}
+	}
+	return true
+}
+
+func (f *Field) Full() bool {
+	for y := 0; y < height; y++ {
+		for x := 0; x < width; x++ {
+			if f.f[y][x] == 0 {
+				return false
+			}
+		}
+	}
+	return true
+}
+
 func (f *Field) r() {
+	if f.Full() {
+		return
+	}
 	for {
 		i := rand.Intn(height * width)
 		c, r := i/width, i%width

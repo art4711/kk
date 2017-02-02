@@ -190,6 +190,8 @@ func (s *State) draw(pub func()) {
 	s.glctx.ClearColor(0.95, 0.97, 1, 1)
 	s.glctx.Clear(gl.COLOR_BUFFER_BIT)
 
+	over := s.f.GameOver()
+
 	// Draw the buttons.
 	for i := range s.buttons {
 		r := s.buttons[i].r
@@ -216,7 +218,7 @@ func (s *State) draw(pub func()) {
 	w, h := s.f.W(), s.f.H()
 	for y := 0; y < h; y++ {
 		for x := 0; x < w; x++ {
-			t := s.tiles.Get(FT(s.f.f[y][x]))
+			t := s.tiles.Get(FT{s.f.f[y][x], over})
 			tl, tr, bl := s.fRectBounds(x, y)
 			t.Draw(s.wsz, tl, tr, bl, image.Rectangle{Max: s.tsz})
 		}
