@@ -15,6 +15,13 @@ import (
 	"golang.org/x/mobile/gl"
 )
 
+/*
+ * This file contains all the bitmap rendering.
+ * We use glutil.Images for sprites, but at some point
+ * it might be a better idea to take control over the
+ * shaders and maybe do something interesting with them.
+ */
+
 type Tiles struct {
 	ims *glutil.Images
 	m   map[T]*glutil.Image

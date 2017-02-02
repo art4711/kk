@@ -47,6 +47,7 @@ func New() *State {
 	return s
 }
 
+// Event handler. Main entry point from platform specific code.
 func (s *State) Handle(ei interface{}, pub func()) bool {
 	switch e := ei.(type) {
 	case lifecycle.Event:

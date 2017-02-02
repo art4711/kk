@@ -12,6 +12,18 @@ import (
 	"golang.org/x/mobile/geom"
 )
 
+/*
+ * This file contains all we need to do the layout on the screen.
+ * We use widgets from shiny to do this, but that is probably a bad
+ * idea because the interfaces used might not be inentionally exposed
+ * and probably won't stay stable. It works for now, but it might be
+ * a good idea to eventually write some simple package that lays out
+ * boxes.
+ *
+ * Originally I also wanted to use shiny widgets for event routing but
+ * that isn't usable yet.
+ */
+
 // helper.
 func stretch(n node.Node, alongWeight int) node.Node {
 	return widget.WithLayoutData(n, widget.FlowLayoutData{
