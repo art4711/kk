@@ -40,6 +40,11 @@ type State struct {
 func New() *State {
 	s := &State{}
 	s.f.Init()
+	s.buttons = []butt{
+		{b: Butt{Label: "Save"}},
+		{b: Butt{Label: "Load", Fade: true}},
+		{b: Butt{Label: "Reset"}},
+	}
 	return s
 }
 
@@ -72,6 +77,7 @@ func (s *State) Handle(ei interface{}, pub func()) bool {
 		s.f.Init()
 	case EvSave:
 		f := s.f
+		s.buttons[1].b.Fade = false // XXX - 1
 		s.saved = &f
 	case EvLoad:
 		if s.saved != nil {

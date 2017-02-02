@@ -84,6 +84,7 @@ func (t *Tiles) Get(tl T) *glutil.Image {
 type Butt struct {
 	Label  string
 	Invert bool
+	Fade   bool
 }
 
 func (b Butt) Gen(t *Tiles) *glutil.Image {
@@ -98,8 +99,11 @@ func (b Butt) Gen(t *Tiles) *glutil.Image {
 	r := img.Bounds()
 
 	fg := image.Black
-	bg := image.White
+	bg := image.Transparent
 
+	if b.Fade {
+		fg = image.NewUniform(color.RGBA{0, 0, 0, 90})
+	}
 	if b.Invert {
 		fg, bg = bg, fg
 	}

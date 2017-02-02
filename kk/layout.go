@@ -61,12 +61,6 @@ func (s *State) setSize(e size.Event) {
 
 	// We abuse shiny widgets to do the layout for us.
 
-	s.buttons = []butt{
-		{b: Butt{Label: "Save"}},
-		{b: Butt{Label: "Load"}},
-		{b: Butt{Label: "Reset"}},
-	}
-
 	bw := make([]*widget.Uniform, len(s.buttons))
 	for i := range bw {
 		bw[i] = widget.NewUniform(theme.Light, nil)
