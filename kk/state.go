@@ -199,9 +199,15 @@ func (s *State) draw(pub func()) {
 	}
 
 	// Draw score.
+	mask := 1
+	for _ = range s.scores {
+		mask *= 10
+	}
 	for i := range s.scores {
 		r := s.scores[i]
-		img := s.tiles.Get(ST(i))
+		mask /= 10
+		v := (s.f.score / mask) % 10
+		img := s.tiles.Get(ST(v))
 		tl, tr, bl := s.rect2gps(r)
 		img.Draw(s.wsz, tl, tr, bl, image.Rectangle{Max: r.Size()})
 	}
