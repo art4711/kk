@@ -21,8 +21,7 @@ bypass everything else it does and pretend the events are just like
 mobile events. This is because the mobile stuff doesn't allow resizing
 windows on desktop and the shiny OpenGL widget doesn't work on OSX.
 This happens to work for now, but I understand that it isn't the
-intended way to use the library. Not that I actually need OpenGL, but
-let's use the powerful drugs from start.
+intended way to use the library.
 
 The second way the shiny library is abused is that I couldn't be
 bothered to write a generic box layout library so I use shiny to
@@ -33,13 +32,22 @@ to use shiny to route events to the right boxes, something I actually
 wanted to use it for (it seems to be done internally, but I haven't
 found any way that was exposed to the user).
 
- * [kk/field.go](kk/field.go) implements the game logic and scores.
+ * [kk/field.go](kk/field.go) - the game logic and scores.
 
- * [kk/tiles.go](kk/tiles.go) implements the bitmaps/sprites.
+ * [kk/tiles.go](kk/tiles.go) - generation of bitmaps/sprites.
 
- * [kk/layout.go](kk/layout.go) implements the layout of the ui elements.
+ * [kk/layout.go](kk/layout.go) - layout of the ui elements.
 
- * [kk/state.go](kk/state.go) implements the main event handler and drawing.
+ * [kk/state.go](kk/state.go) - main event handler and drawing.
+
+ * [kk/persistent.go](kk/persistent.go) - persistent saving of state.
+
+I'm fully aware that all this is silly. I don't need OpenGL for
+anything, saving is pretty useless, saving the state persistently is
+meaningless, I could have almost hardcoded the layout with some
+trivial code, I didn't need to overgeneralize the event handlers so
+much, etc. The point is to run into as many small problems as possible
+to see how things are done.
 
 ## TODO ##
 
