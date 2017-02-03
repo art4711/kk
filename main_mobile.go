@@ -3,7 +3,7 @@
 package main
 
 import (
-	"kk/kk"
+	"github.com/art4711/kk/kk"
 
 	"golang.org/x/mobile/app"
 )

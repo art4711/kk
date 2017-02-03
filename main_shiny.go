@@ -3,8 +3,9 @@
 package main
 
 import (
-	"kk/kk"
 	"log"
+
+	"github.com/art4711/kk/kk"
 
 	"golang.org/x/exp/shiny/driver/gldriver"
 	"golang.org/x/exp/shiny/screen"
