@@ -45,6 +45,10 @@ func New() *State {
 	s.buttons["save"] = &butt{b: Butt{Label: "Save"}}
 	s.buttons["load"] = &butt{b: Butt{Label: "Load", Fade: true}}
 	s.buttons["reset"] = &butt{b: Butt{Label: "Reset"}}
+	s.restore()
+	if s.saved != nil {
+		s.buttons["load"].b.Fade = false
+	}
 	return s
 }
 
@@ -80,6 +84,7 @@ func (s *State) Handle(ei interface{}, pub func()) bool {
 		f := s.f
 		s.buttons["load"].b.Fade = false
 		s.saved = &f
+		s.save()
 	case EvLoad:
 		if s.saved != nil {
 			s.f = *s.saved
