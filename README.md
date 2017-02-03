@@ -66,7 +66,8 @@ Better font for the score.
 Acquire taste before ever picking colors for anything ever. Especially
 the game over color is eye-watering.
 
-Save save state to something permanent. Gomobile doesn't provide an
-abstraction for any permanent storage and I don't think it's worth it
-to write specific Android code to plug into storage just to stuff a
-handful of bytes somewhere.
+It would be nice to have a portable way to figure out where to save
+permanent state. Gomobile doesn't provide an abstraction for any
+permanent storage, so it's up to us to guess paths. Maybe there is a
+need for a package that implements one function:
+`DirectoryForSmallPersistentState`.
