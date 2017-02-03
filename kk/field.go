@@ -1,6 +1,10 @@
 package kk
 
-import "math/rand"
+import (
+	"math/rand"
+
+	"github.com/art4711/unpredictable"
+)
 
 const width = 4
 const height = 4
@@ -45,12 +49,17 @@ func (f *Field) Full() bool {
 	return true
 }
 
+// If you're allergic to unpredictable numbers, just replace the line
+// below with:
+//     var rsrc = rand.New(rand.NewSource(0))
+var rsrc = rand.New(unpredictable.NewMathRandSource())
+
 func (f *Field) r() {
 	if f.Full() {
 		return
 	}
 	for {
-		i := rand.Intn(height * width)
+		i := rsrc.Intn(height * width)
 		c, r := i/width, i%width
 		if f.f[c][r] == 0 {
 			f.f[c][r] = 1

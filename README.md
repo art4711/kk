@@ -43,10 +43,6 @@ found any way that was exposed to the user).
 
 ## TODO ##
 
-Use unpredictable for randomness? I refuse to use the normal monkey
-methods to seed a terrible RNG so right now the randomness is entirely
-unseeded and generates the exact same game every time.
-
 Get rid of glutil.Image. It's three layers of indirection and unit
 obfuscation for something that will be shorter to just layout
 ourselves without all this complexity of weird units. Besides, we'll
