@@ -33,7 +33,7 @@ func keyFilter(ei interface{}) interface{} {
 func main() {
 	gldriver.Main(func(s screen.Screen) {
 		st := kk.New()
-		w, err := s.NewWindow(&screen.NewWindowOptions{1080, 1776})
+		w, err := s.NewWindow(&screen.NewWindowOptions{Width: 1080, Height: 1776})
 		if err != nil {
 			log.Fatal(err)
 		}
